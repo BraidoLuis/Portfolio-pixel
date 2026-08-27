@@ -28,6 +28,7 @@ type Interaction = {
   panel?: Exclude<PanelType, null>;
   destination?: "house" | "world";
   action?: "toggle-fire";
+  sound?: "chest-open";
 };
 
 export function PhaserGame({ character }: PhaserGameProps) {
@@ -138,6 +139,11 @@ export function PhaserGame({ character }: PhaserGameProps) {
             "fire-extinguish",
             "/game/audio/effects/fire-extinguish.mp3",
           );
+
+          this.load.audio(
+            "chest-open",
+            "/game/audio/effects/chest-open.mp3",
+          );
         }
 
         create() {
@@ -240,15 +246,15 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
           this.interactions = isHouse
             ? [
-                { x: 615, y: 455, radius: 82, label: "Abrir guia do portfólio", panel: "intro" },
+                { x: 615, y: 455, radius: 82, label: "Abrir guia do portfólio", panel: "intro", sound: "chest-open" },
                 { x: 170, y: 160, radius: 115, label: "Ligar TV", panel: "tv" },
                 { x: 740, y: 180, radius: 95, label: this.fireLit ? "Apagar lareira" : "Acender lareira", action: "toggle-fire" },
                 { x: 480, y: 558, radius: 44, label: "Sair da casa", destination: "world" },
               ]
             : [
-                { x: 625, y: 95, radius: 95, label: "Projetos", panel: "projects" },
-                { x: 230, y: 405, radius: 135, label: "Habilidades", panel: "skills" },
-                { x: 1015, y: 405, radius: 135, label: "Experiências", panel: "experiences" },
+                { x: 625, y: 95, radius: 95, label: "Projetos", panel: "projects", sound: "chest-open" },
+                { x: 230, y: 405, radius: 135, label: "Habilidades", panel: "skills", sound: "chest-open" },
+                { x: 1015, y: 405, radius: 135, label: "Experiências", panel: "experiences", sound: "chest-open" },
                 { x: 620, y: 505, radius: 86, label: "Mapa do mundo", panel: "map" },
                 { x: 695, y: 1050, radius: 105, label: "Ver caminho dos baús", panel: "map" },
                 { x: 625, y: 900, radius: 72, label: "Entrar na casa", destination: "house" },
@@ -700,19 +706,54 @@ export function PhaserGame({ character }: PhaserGameProps) {
             .setVisible(true);
         }
 
+        private playInteractionSound(interaction: Interaction) {
+          if (!interaction.sound) {
+            return;
+          }
+
+          if (!this.cache.audio.exists(interaction.sound)) {
+            return;
+          }
+
+          const sound = this.sound.add(interaction.sound, {
+            volume: 0.3,
+          });
+
+          sound.play();
+
+          this.time.delayedCall(2000, () => {
+            if (sound.isPlaying) {
+              sound.stop();
+            }
+
+            sound.destroy();
+          });
+        }
+
         private interact() {
-          if (this.pausedByPanel || !this.nearest) return;
+          if (this.pausedByPanel || !this.nearest) {
+            return;
+          }
+
+          this.playInteractionSound(this.nearest);
+
           if (this.nearest.action) {
             this.toggleRoomObject(this.nearest.action);
             return;
           }
+
           if (this.nearest.destination) {
             this.transitionTo(this.nearest.destination);
             return;
           }
+
           if (this.nearest.panel) {
             window.dispatchEvent(
-              new CustomEvent("portfolio:open-panel", { detail: { panel: this.nearest.panel } }),
+              new CustomEvent("portfolio:open-panel", {
+                detail: {
+                  panel: this.nearest.panel,
+                },
+              }),
             );
           }
         }
