@@ -128,6 +128,16 @@ export function PhaserGame({ character }: PhaserGameProps) {
             "step-grass-02",
             "/game/audio/effects/step-grass-02.mp3",
           );
+
+          this.load.audio(
+            "fire-ignite",
+            "/game/audio/effects/fire-ignite.mp3",
+          );
+
+          this.load.audio(
+            "fire-extinguish",
+            "/game/audio/effects/fire-extinguish.mp3",
+          );
         }
 
         create() {
@@ -377,13 +387,44 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.fireSprite?.setVisible(this.fireLit);
         }
 
-        private toggleRoomObject(action: NonNullable<Interaction["action"]>) {
-          if (action === "toggle-fire") this.fireLit = !this.fireLit;
+        private playFireToggleSound() {
+          const soundKey = this.fireLit
+            ? "fire-ignite"
+            : "fire-extinguish";
+
+          if (!this.cache.audio.exists(soundKey)) {
+            return;
+          }
+
+          this.sound.play(soundKey, {
+            volume: 0.25,
+          });
+        }
+
+        private toggleRoomObject(
+          action: NonNullable<Interaction["action"]>,
+        ) {
+          if (action === "toggle-fire") {
+            this.fireLit = !this.fireLit;
+            this.playFireToggleSound();
+          }
+
           this.applyRoomLightStates();
 
-          const interaction = this.interactions.find((item) => item.action === action);
-          if (!interaction) return;
-          if (action === "toggle-fire") interaction.label = this.fireLit ? "Apagar lareira" : "Acender lareira";
+          const interaction = this.interactions.find(
+            (item) => item.action === action,
+          );
+
+          if (!interaction) {
+            return;
+          }
+
+          if (action === "toggle-fire") {
+            interaction.label = this.fireLit
+              ? "Apagar lareira"
+              : "Acender lareira";
+          }
+
           this.updateInteraction();
         }
 
