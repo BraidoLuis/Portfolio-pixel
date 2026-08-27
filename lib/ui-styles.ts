@@ -36,10 +36,10 @@ export const tagListClass =
   "mt-3 flex flex-wrap gap-1.5 [&>span]:border-2 [&>span]:border-[rgba(89,46,27,.36)] [&>span]:bg-[rgba(104,55,31,.13)] [&>span]:px-2 [&>span]:py-1 [&>span]:text-xs [&>span]:font-black";
 
 export const adminPageClass = [
-  "min-h-svh p-[clamp(1rem,3vw,2.5rem)] text-[#4b2b22]",
-  "bg-[#6f9b55]",
-  "bg-[linear-gradient(rgba(32,18,12,.12)_2px,transparent_2px),linear-gradient(90deg,rgba(32,18,12,.1)_2px,transparent_2px)]",
-  "bg-[size:36px_36px]",
+  "relative min-h-svh overflow-x-hidden p-[clamp(1rem,3vw,2.5rem)]",
+  "text-[#4b2b22]",
+  "bg-[linear-gradient(rgba(25,40,20,.45),rgba(25,40,20,.55)),url('/game/exterior-world.png')]",
+  "bg-cover bg-center bg-fixed",
 ].join(" ");
 
 export const adminActionClass = [

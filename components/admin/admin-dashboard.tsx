@@ -184,7 +184,15 @@ export function AdminDashboard() {
 
   return (
     <main className={adminPageClass}>
-      <header className={`${paperSurfaceClass} mx-auto mb-5 flex max-w-[1320px] items-center justify-between gap-4 border-[6px] p-4 shadow-[inset_0_0_0_3px_#d58a48,0_7px_0_rgba(48,23,14,.45)] max-[720px]:flex-col max-[720px]:items-start`}>
+      <header
+        className={[
+          "mx-auto mb-8 flex max-w-[1180px] items-center justify-between gap-4",
+          "border-[6px] border-[#3a1c12] bg-[#9b542e] p-5",
+          "text-[#fff1c4]",
+          "shadow-[inset_0_0_0_3px_#d58a48,0_8px_0_rgba(42,20,12,.55)]",
+          "max-[720px]:flex-col max-[720px]:items-start",
+        ].join(" ")}
+      >
         <div><p className="mb-1 text-xs font-black uppercase text-[#8e502e]">Painel do portfólio</p><h1 className="text-[#65331f]">Mural de projetos</h1></div>
         <div className="flex flex-wrap gap-2.5">
           <button className={adminActionClass} type="button" onClick={createProject}><Plus /> Nova missão</button>
@@ -200,10 +208,24 @@ export function AdminDashboard() {
           {projects.length === 0 ? (
             <div className={`${paperSurfaceClass} p-8 text-center font-black`}>Nenhuma missão registrada. Cadastre seu primeiro projeto.</div>
           ) : projects.map((project) => (
-            <motion.article key={project.id} layout className={`${paperSurfaceClass} grid grid-cols-[88px_1fr] gap-3.5 p-3.5`}>
-              <div className="grid size-[88px] place-items-center border-[3px] border-[#2d1814] bg-[#4b7151] bg-cover bg-center text-[1.4rem] font-black text-[#fff0bc]" style={project.thumbnail_url ? { backgroundImage: `url(${project.thumbnail_url})` } : undefined}>
-                {!project.thumbnail_url && project.title.slice(0, 2).toUpperCase()}
-              </div>
+            <motion.article
+              key={project.id}
+              layout
+              whileHover={{ y: -4 }}
+              className={[
+                paperSurfaceClass,
+                "group overflow-hidden p-3",
+                "transition-shadow hover:shadow-[inset_0_0_0_3px_#ffedbd,0_10px_0_rgba(48,23,14,.45)]",
+              ].join(" ")}
+            >
+              <div
+                className="aspect-video w-full border-[3px] border-[#2d1814] bg-[#4b7151] bg-cover bg-center"
+                style={
+                  project.thumbnail_url
+                    ? { backgroundImage: `url(${project.thumbnail_url})` }
+                    : undefined
+                }
+              />
               <div>
                 <span className={statusBadgeClass(project.status)}>{project.status}</span>
                 <h2 className="my-1 text-[1.05rem] text-[#643722]">{project.title}</h2>
@@ -219,37 +241,44 @@ export function AdminDashboard() {
         </div>
 
         {draft && (
-          <motion.form
-            className="fixed inset-y-4 right-4 z-80 w-[min(660px,calc(100vw-2rem))] overflow-y-auto border-8 border-[#52291d] bg-[#f6d99c] p-5 shadow-[inset_0_0_0_4px_#ffedbd,-12px_0_0_rgba(44,20,12,.28)] max-[720px]:inset-2 max-[720px]:w-[calc(100vw-1rem)]"
-            onSubmit={(event) => saveProject(event)}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <div className="flex items-center justify-between gap-4 border-b-[3px] border-dashed border-[rgba(91,47,27,.4)] pb-3">
-              <div><p className="mb-1 text-xs font-black uppercase text-[#8e502e]">Editor de missão</p><h2 className="text-[#65331f]">{draft.id ? "Editar projeto" : "Novo projeto"}</h2></div>
-              <button className="grid size-[38px] place-items-center border-[3px] border-[#2d1814] bg-[#52291d] text-[1.4rem] text-[#fff1c4]" type="button" onClick={() => setDraft(null)} aria-label="Fechar editor">×</button>
-            </div>
+          <div className="fixed inset-0 z-50 grid place-items-center bg-[#1c120ccc] p-4 backdrop-blur-[2px]">
+            <motion.form
+              className={[
+                "max-h-[92vh] w-full max-w-[900px] overflow-y-auto",
+                "border-[8px] border-[#52291d] bg-[#f6d99c] p-6",
+                "shadow-[inset_0_0_0_4px_#ffedbd,0_12px_0_rgba(30,14,8,.6)]",
+              ].join(" ")}
+              initial={{ opacity: 0, scale: 0.94, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              onSubmit={saveProject}
+            >
+              <div className="flex items-center justify-between gap-4 border-b-[3px] border-dashed border-[rgba(91,47,27,.4)] pb-3">
+                <div><p className="mb-1 text-xs font-black uppercase text-[#8e502e]">Editor de missão</p><h2 className="text-[#65331f]">{draft.id ? "Editar projeto" : "Novo projeto"}</h2></div>
+                <button className="grid size-[38px] place-items-center border-[3px] border-[#2d1814] bg-[#52291d] text-[1.4rem] text-[#fff1c4]" type="button" onClick={() => setDraft(null)} aria-label="Fechar editor">×</button>
+              </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3.5 max-[720px]:grid-cols-1">
-              <label className={formLabelClass}>Título<input className={formControlClass} value={draft.title} onChange={(event) => { updateField("title", event.target.value); if (!draft.id) updateField("slug", slugify(event.target.value)); }} required /></label>
-              <label className={formLabelClass}>Slug<input className={formControlClass} value={draft.slug} onChange={(event) => updateField("slug", slugify(event.target.value))} required /></label>
-              <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Resumo<textarea className={formControlClass} value={draft.summary} onChange={(event) => updateField("summary", event.target.value)} required rows={3} /></label>
-              <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Problema<textarea className={formControlClass} value={draft.problem} onChange={(event) => updateField("problem", event.target.value)} rows={3} /></label>
-              <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Solução e participação<textarea className={formControlClass} value={draft.solution} onChange={(event) => updateField("solution", event.target.value)} required rows={4} /></label>
-              <label className={formLabelClass}>Função<input className={formControlClass} value={draft.role} onChange={(event) => updateField("role", event.target.value)} /></label>
-              <label className={formLabelClass}>Ordem<input className={formControlClass} type="number" min="1" value={draft.display_order} onChange={(event) => updateField("display_order", Number(event.target.value))} /></label>
-              <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Tecnologias, separadas por vírgula<input className={formControlClass} value={draft.technologiesText} onChange={(event) => updateField("technologiesText", event.target.value)} /></label>
-              <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Funcionalidades, uma por linha<textarea className={formControlClass} value={draft.featuresText} onChange={(event) => updateField("featuresText", event.target.value)} rows={4} /></label>
-              <label className={formLabelClass}>Link publicado<input className={formControlClass} type="url" value={draft.live_url ?? ""} onChange={(event) => updateField("live_url", event.target.value)} /></label>
-              <label className={formLabelClass}>Repositório<input className={formControlClass} type="url" value={draft.repository_url ?? ""} onChange={(event) => updateField("repository_url", event.target.value)} /></label>
-              <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Imagem de capa<input className={formControlClass} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setCover(event.target.files?.[0] ?? null)} /></label>
-            </div>
+              <div className="mt-4 grid grid-cols-2 gap-3.5 max-[720px]:grid-cols-1">
+                <label className={formLabelClass}>Título<input className={formControlClass} value={draft.title} onChange={(event) => { updateField("title", event.target.value); if (!draft.id) updateField("slug", slugify(event.target.value)); }} required /></label>
+                <label className={formLabelClass}>Slug<input className={formControlClass} value={draft.slug} onChange={(event) => updateField("slug", slugify(event.target.value))} required /></label>
+                <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Resumo<textarea className={formControlClass} value={draft.summary} onChange={(event) => updateField("summary", event.target.value)} required rows={3} /></label>
+                <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Problema<textarea className={formControlClass} value={draft.problem} onChange={(event) => updateField("problem", event.target.value)} rows={3} /></label>
+                <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Solução e participação<textarea className={formControlClass} value={draft.solution} onChange={(event) => updateField("solution", event.target.value)} required rows={4} /></label>
+                <label className={formLabelClass}>Função<input className={formControlClass} value={draft.role} onChange={(event) => updateField("role", event.target.value)} /></label>
+                <label className={formLabelClass}>Ordem<input className={formControlClass} type="number" min="1" value={draft.display_order} onChange={(event) => updateField("display_order", Number(event.target.value))} /></label>
+                <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Tecnologias, separadas por vírgula<input className={formControlClass} value={draft.technologiesText} onChange={(event) => updateField("technologiesText", event.target.value)} /></label>
+                <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Funcionalidades, uma por linha<textarea className={formControlClass} value={draft.featuresText} onChange={(event) => updateField("featuresText", event.target.value)} rows={4} /></label>
+                <label className={formLabelClass}>Link publicado<input className={formControlClass} type="url" value={draft.live_url ?? ""} onChange={(event) => updateField("live_url", event.target.value)} /></label>
+                <label className={formLabelClass}>Repositório<input className={formControlClass} type="url" value={draft.repository_url ?? ""} onChange={(event) => updateField("repository_url", event.target.value)} /></label>
+                <label className={`${formLabelClass} col-span-2 max-[720px]:col-span-1`}>Imagem de capa<input className={formControlClass} type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setCover(event.target.files?.[0] ?? null)} /></label>
+              </div>
 
-            <div className="mt-4 flex flex-wrap justify-end gap-2.5">
-              <button className={adminActionClass} type="submit" disabled={saving}><Save /> {saving ? "Salvando..." : "Salvar rascunho"}</button>
-              <button className={`${adminActionClass} bg-[#4d7541]`} type="button" disabled={saving} onClick={(event) => void saveProject(event, "published")}><Send /> Publicar</button>
-            </div>
-          </motion.form>
+              <div className="mt-4 flex flex-wrap justify-end gap-2.5">
+                <button className={adminActionClass} type="submit" disabled={saving}><Save /> {saving ? "Salvando..." : "Salvar rascunho"}</button>
+                <button className={`${adminActionClass} bg-[#4d7541]`} type="button" disabled={saving} onClick={(event) => void saveProject(event, "published")}><Send /> Publicar</button>
+              </div>
+            </motion.form>
+          </div>
         )}
       </section>
     </main>
