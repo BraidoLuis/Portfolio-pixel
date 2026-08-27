@@ -45,7 +45,7 @@ export function ContentDialog() {
     <Dialog open={Boolean(activePanel)} onOpenChange={(open) => !open && closePanel()}>
       <DialogContent
         className={cn(
-          "max-h-[min(86svh,820px)] w-[min(690px,calc(100vw-2rem))]! max-w-[690px]! overflow-y-auto rounded-[2px]! border-[5px]! border-[#2d1814]! bg-[repeating-linear-gradient(0deg,#8f4b28_0_18px,#7b3c22_18px_22px)]! p-[18px]! text-[#4b2b22]! shadow-[inset_0_0_0_5px_#d58a48,0_14px_0_rgba(33,14,8,.55)]! max-[720px]:max-h-[88svh] max-[720px]:p-3!",
+          "pixel-scrollbar max-h-[min(86svh,820px)] w-[min(690px,calc(100vw-2rem))]! max-w-[690px]! overflow-y-auto rounded-[2px]! border-[5px]! border-[#2d1814]! bg-[#f6d99c]! p-[18px]! text-[#4b2b22]! shadow-[inset_0_0_0_5px_#d58a48,0_14px_0_rgba(33,14,8,.55)]! max-[720px]:max-h-[88svh] max-[720px]:p-3!",
           "[&_[data-slot=dialog-close]]:right-5 [&_[data-slot=dialog-close]]:top-5 [&_[data-slot=dialog-close]]:z-5 [&_[data-slot=dialog-close]]:grid [&_[data-slot=dialog-close]]:size-9 [&_[data-slot=dialog-close]]:place-items-center [&_[data-slot=dialog-close]]:border-2 [&_[data-slot=dialog-close]]:border-[#2d1814] [&_[data-slot=dialog-close]]:bg-[#52291d] [&_[data-slot=dialog-close]]:text-[#fff1c2] [&_[data-slot=dialog-close]]:opacity-100",
           activePanel === "projects" && "w-[min(1080px,calc(100vw-2rem))]! max-w-[1080px]!",
           isTvContent && "bg-[repeating-linear-gradient(90deg,#5b341f_0_20px,#462719_20px_24px)]! shadow-[inset_0_0_0_5px_#9a5b31,inset_0_0_0_10px_#2a1812,0_14px_0_rgba(20,8,5,.65)]!",

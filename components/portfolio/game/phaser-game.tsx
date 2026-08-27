@@ -67,6 +67,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private fireGlow?: import("phaser").GameObjects.Ellipse;
         private fireSprite?: import("phaser").GameObjects.Image;
         private fireTexture?: import("phaser").Textures.CanvasTexture;
+        private lastFootstepAt = 0;
+        private footstepVariation = 0;
         private onMobileDirection = (event: Event) => {
           const detail = (event as CustomEvent<{ direction: string; active: boolean }>).detail;
           if (detail.active) this.mobileDirections.add(detail.direction);
@@ -91,6 +93,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.worldCollisionPixels = undefined;
           this.worldCollisionWidth = 0;
           this.worldCollisionHeight = 0;
+          this.lastFootstepAt = 0;
+          this.footstepVariation = 0;
         }
 
         preload() {
@@ -104,6 +108,25 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.load.image(
             "character-feminine-walksheet-source",
             "/game/character-feminine-walksheet.png",
+          );
+          this.load.audio(
+            "step-wood-01",
+            "/game/audio/effects/step-wood-01.mp3",
+          );
+
+          this.load.audio(
+            "step-wood-02",
+            "/game/audio/effects/step-wood-02.mp3",
+          );
+
+          this.load.audio(
+            "step-grass-01",
+            "/game/audio/effects/step-grass-01.mp3",
+          );
+
+          this.load.audio(
+            "step-grass-02",
+            "/game/audio/effects/step-grass-02.mp3",
           );
         }
 
@@ -549,6 +572,33 @@ export function PhaserGame({ character }: PhaserGameProps) {
           return false;
         }
 
+        private playFootstep() {
+          const now = this.time.now;
+          const footstepInterval = 320;
+
+          if (now - this.lastFootstepAt < footstepInterval) {
+            return;
+          }
+
+          this.lastFootstepAt = now;
+
+          const surface = this.area === "house" ? "wood" : "grass";
+          const variation = this.footstepVariation === 0 ? "01" : "02";
+          const soundKey = `step-${surface}-${variation}`;
+
+          this.footstepVariation =
+            this.footstepVariation === 0 ? 1 : 0;
+
+          if (!this.cache.audio.exists(soundKey)) {
+            return;
+          }
+
+          this.sound.play(soundKey, {
+            volume: 0.14,
+            rate: Phaser.Math.FloatBetween(0.96, 1.04),
+          });
+        }
+
         update() {
           if (!this.player) return;
           if (this.pausedByPanel) {
@@ -579,6 +629,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
             if (this.player.anims.currentAnim?.key !== animation || !this.player.anims.isPlaying) {
               this.player.anims.play(animation, true);
             }
+            this.playFootstep();
           } else {
             this.stopWalking();
           }
