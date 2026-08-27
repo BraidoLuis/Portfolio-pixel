@@ -28,7 +28,7 @@ type Interaction = {
   panel?: Exclude<PanelType, null>;
   destination?: "house" | "world";
   action?: "toggle-fire";
-  sound?: "chest-open" | "door-open";
+  sound?: "chest-open" | "door-open" | "map-open";
 };
 
 export function PhaserGame({ character }: PhaserGameProps) {
@@ -149,6 +149,11 @@ export function PhaserGame({ character }: PhaserGameProps) {
             "door-open",
             "/game/audio/effects/door-open.mp3",
           );
+
+          this.load.audio(
+            "map-open",
+            "/game/audio/effects/map-open.mp3",
+          );
         }
 
         create() {
@@ -260,8 +265,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
                 { x: 625, y: 95, radius: 95, label: "Projetos", panel: "projects", sound: "chest-open" },
                 { x: 230, y: 405, radius: 135, label: "Habilidades", panel: "skills", sound: "chest-open" },
                 { x: 1015, y: 405, radius: 135, label: "Experiências", panel: "experiences", sound: "chest-open" },
-                { x: 620, y: 505, radius: 86, label: "Mapa do mundo", panel: "map" },
-                { x: 695, y: 1050, radius: 105, label: "Ver caminho dos baús", panel: "map" },
+                { x: 620, y: 505, radius: 86, label: "Mapa do mundo", panel: "map", sound: "map-open" },
+                { x: 695, y: 1050, radius: 105, label: "Ver caminho dos baús", panel: "map", sound: "map-open" },
                 { x: 625, y: 900, radius: 72, label: "Entrar na casa", destination: "house", sound: "door-open" },
               ];
 
