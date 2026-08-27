@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../vendor/shadcn-tailwind-4.13.0.css";
+
+@font-face {
+  font-family: "Stardew Valley";
+  src: url("/fonts/svthin.otf.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Stardew Valley";
+  src: url("/fonts/svbold.otf.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600 900;
+  font-display: swap;
+}
+
+:root {
+  --background: #111827;
+  --foreground: #fff7db;
+  --card: #f6d99c;
+  --card-foreground: #4b2b22;
+  --popover: #f6d99c;
+  --popover-foreground: #4b2b22;
+  --primary: #6a371f;
+  --primary-foreground: #fff7db;
+  --secondary: #d58a48;
+  --secondary-foreground: #2d1814;
+  --muted: #eac57e;
+  --muted-foreground: #6b4735;
+  --accent: #f4b95f;
+  --accent-foreground: #2d1814;
+  --destructive: #a33128;
+  --border: #6a371f;
+  --input: #8b542e;
+  --ring: #ffe39a;
+  --radius: 0.35rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "Stardew Valley", ui-monospace, monospace;
+}
+
+@layer base {
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: "Stardew Valley", ui-monospace, monospace;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@keyframes twinkle {
+  50% { opacity: 0.25; }
+}
+
+@keyframes cloud-pass {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(164vw, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
