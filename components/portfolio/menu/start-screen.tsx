@@ -90,15 +90,48 @@ function MenuSky() {
 function TitleBoard() {
   return (
     <motion.header
-      className="relative z-2 grid aspect-[2.4/1] min-h-0 w-[min(920px,91vw,91.2svh)] place-content-center bg-[url('/game/menu-title-board.png')] bg-[length:100%_100%] bg-center bg-no-repeat px-[12%] pb-[7%] pt-[8%] text-center text-[#71371e] [filter:drop-shadow(0_10px_0_rgba(46,18,12,.72))] [text-shadow:3px_3px_0_#f6cf81,1px_0_0_#4e2418] max-[720px]:w-[min(96vw,620px)]"
+      className={[
+        "relative z-2 grid",
+        "aspect-[3.15/1] w-[min(1280px,96vw)]",
+        "place-content-center",
+        "bg-[url('/game/menu-title-board.png')]",
+        "bg-[length:100%_100%] bg-center bg-no-repeat",
+        "px-[8%] pb-[6%] pt-[7%]",
+        "text-center text-[#71371e]",
+        "[filter:drop-shadow(0_10px_0_rgba(46,18,12,.72))]",
+        "[text-shadow:3px_3px_0_#f6cf81,1px_0_0_#4e2418]",
+        "max-[720px]:aspect-[2.8/1] max-[720px]:w-[98vw]",
+        "max-[720px]:px-[6%]",
+      ].join(" ")}
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 90, damping: 13 }}
+      transition={{
+        type: "spring",
+        stiffness: 90,
+        damping: 13,
+      }}
     >
-      <span className="block text-[clamp(2.5rem,6.2vw,5.8rem)] font-black leading-none tracking-[.08em] max-[720px]:text-[clamp(2rem,12vw,3.4rem)]">
-        LUÍS BRAIDO
+      <span
+        className={[
+          "block whitespace-nowrap",
+          "text-[clamp(1.15rem,4.1vw,3.5rem)]",
+          "font-black leading-none tracking-[.035em]",
+          "max-[720px]:text-[clamp(.85rem,4vw,1.35rem)]",
+          "max-[720px]:tracking-normal",
+        ].join(" ")}
+      >
+        LUÍS FELIPE DOS SANTOS BRAIDO
       </span>
-      <strong className="mt-3 block text-[clamp(1.15rem,2.5vw,2.25rem)] leading-none tracking-[.08em] max-[720px]:mt-1.5 max-[720px]:text-[clamp(.9rem,5vw,1.4rem)]">
+
+      <strong
+        className={[
+          "mt-3 block whitespace-nowrap",
+          "text-[clamp(1rem,2.2vw,2rem)]",
+          "leading-none tracking-[.08em]",
+          "max-[720px]:mt-1.5",
+          "max-[720px]:text-[clamp(.75rem,3.5vw,1.15rem)]",
+        ].join(" ")}
+      >
         PORTFÓLIO
       </strong>
     </motion.header>

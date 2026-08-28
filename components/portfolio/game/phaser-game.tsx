@@ -28,7 +28,7 @@ type Interaction = {
   panel?: Exclude<PanelType, null>;
   destination?: "house" | "world";
   action?: "toggle-fire";
-  sound?: "chest-open" | "door-open" | "map-open";
+  sound?: "chest-open" | "door-open" | "map-open" | "tv-turn-on";
 };
 
 export function PhaserGame({ character }: PhaserGameProps) {
@@ -154,6 +154,16 @@ export function PhaserGame({ character }: PhaserGameProps) {
             "map-open",
             "/game/audio/effects/map-open.mp3",
           );
+
+          this.load.audio(
+            "tv-turn-on",
+            "/game/audio/effects/tv-turn-on.mp3",
+          );
+
+          this.load.audio(
+            "ui-select",
+            "/game/audio/effects/ui-select.mp3",
+          );
         }
 
         create() {
@@ -257,7 +267,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.interactions = isHouse
             ? [
                 { x: 615, y: 455, radius: 82, label: "Abrir guia do portfólio", panel: "intro", sound: "chest-open" },
-                { x: 170, y: 160, radius: 115, label: "Ligar TV", panel: "tv" },
+                { x: 170, y: 160, radius: 115, label: "Ligar TV", panel: "tv", sound: "tv-turn-on" },
                 { x: 740, y: 180, radius: 95, label: this.fireLit ? "Apagar lareira" : "Acender lareira", action: "toggle-fire" },
                 { x: 480, y: 558, radius: 44, label: "Sair da casa", destination: "world", sound: "door-open" },
               ]
