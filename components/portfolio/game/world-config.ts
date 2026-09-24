@@ -21,22 +21,23 @@ export type ForegroundRegion = RectangleArea & {
 };
 
 export const SCENE_SIZE = {
-  house: { width: 960, height: 600 },
+  // O interior original é quadrado. Usar a mesma proporção evita esticar o PNG.
+  house: { width: 960, height: 960 },
   world: { width: 1254, height: 1254 },
 } as const;
 
 export const SPAWN_POINTS = {
-  house: { x: 480, y: 505 },
+  house: { x: 480, y: 808 },
   world: { x: 625, y: 990 },
 } as const;
 
 export const HOUSE_COLLISIONS: CollisionBox[] = [
-  { x: 170, y: 160, width: 170, height: 128 },
-  { x: 475, y: 165, width: 162, height: 82 },
-  { x: 740, y: 155, width: 195, height: 132 },
-  { x: 773, y: 430, width: 190, height: 215 },
-  { x: 615, y: 455, width: 54, height: 48 },
-  { x: 122, y: 445, width: 78, height: 92 },
+  { x: 170, y: 256, width: 170, height: 205 },
+  { x: 475, y: 264, width: 162, height: 131 },
+  { x: 740, y: 248, width: 195, height: 211 },
+  { x: 773, y: 688, width: 190, height: 344 },
+  { x: 615, y: 728, width: 54, height: 77 },
+  { x: 122, y: 712, width: 78, height: 147 },
 ];
 
 export const WORLD_COLLISIONS: CollisionBox[] = [
@@ -62,8 +63,8 @@ export const WORLD_COLLISIONS: CollisionBox[] = [
 ];
 
 export const HOUSE_FLOOR_AREAS: RectangleArea[] = [
-  { x: 75, y: 128, width: 810, height: 414 },
-  { x: 405, y: 542, width: 150, height: 58 },
+  { x: 75, y: 205, width: 810, height: 662 },
+  { x: 405, y: 867, width: 150, height: 71 },
 ];
 
 export const WORLD_SPECIAL_WALKABLE_AREAS: RectangleArea[] = [

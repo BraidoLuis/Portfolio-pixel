@@ -80,6 +80,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private onPanelState = (event: Event) => {
           this.pausedByPanel = (event as CustomEvent<{ paused: boolean }>).detail.paused;
         };
+        private onGameResize = () => this.configureCamera();
 
         constructor() {
           super("portfolio-world");
@@ -176,6 +177,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           window.addEventListener("portfolio:mobile-direction", this.onMobileDirection);
           window.addEventListener("portfolio:mobile-interact", this.onMobileInteract);
           window.addEventListener("portfolio:panel-state", this.onPanelState);
+          this.scale.on(Phaser.Scale.Events.RESIZE, this.onGameResize);
           this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupListeners());
           this.cameras.main.fadeIn(220, 20, 12, 8);
         }
@@ -233,11 +235,37 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.player.setFrame(this.idleFrame(this.facing));
         }
 
+        private configureCamera() {
+          const camera = this.cameras.main;
+
+          if (this.area === "house") {
+            camera.stopFollow().removeBounds();
+            // Enquadra todo o quarto sem mudar a proporção do PNG quadrado.
+            const zoom = Math.min(
+              this.scale.width / SCENE_SIZE.house.width,
+              this.scale.height / SCENE_SIZE.house.height,
+            );
+            camera.setZoom(Math.max(zoom, 0.01));
+            camera.centerOn(SCENE_SIZE.house.width / 2, SCENE_SIZE.house.height / 2);
+            return;
+          }
+
+          // O exterior permanece em coordenadas nativas; a câmera percorre o
+          // mapa com zoom inteiro, sem ampliar a imagem por CSS.
+          const zoom = Math.max(
+            this.scale.width < 720 ? 1 : 2,
+            Math.ceil(this.scale.width / SCENE_SIZE.world.width),
+            Math.ceil(this.scale.height / SCENE_SIZE.world.height),
+          );
+          camera.setZoom(zoom);
+          camera.setBounds(0, 0, SCENE_SIZE.world.width, SCENE_SIZE.world.height);
+        }
+
         private buildArea() {
           const isHouse = this.area === "house";
           const { width: worldWidth, height: worldHeight } = SCENE_SIZE[this.area];
           this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-          this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+          this.configureCamera();
 
           const background = this.add.image(worldWidth / 2, worldHeight / 2, isHouse ? "house" : "world");
           background.setDisplaySize(worldWidth, worldHeight).setDepth(0);
@@ -266,10 +294,10 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
           this.interactions = isHouse
             ? [
-                { x: 615, y: 455, radius: 82, label: "Abrir guia do portfólio", panel: "intro", sound: "chest-open" },
-                { x: 170, y: 160, radius: 115, label: "Ligar TV", panel: "tv", sound: "tv-turn-on" },
-                { x: 740, y: 180, radius: 95, label: this.fireLit ? "Apagar lareira" : "Acender lareira", action: "toggle-fire" },
-                { x: 480, y: 558, radius: 44, label: "Sair da casa", destination: "world", sound: "door-open" },
+                { x: 615, y: 728, radius: 96, label: "Abrir guia do portfólio", panel: "intro", sound: "chest-open" },
+                { x: 170, y: 256, radius: 130, label: "Ligar TV", panel: "tv", sound: "tv-turn-on" },
+                { x: 740, y: 288, radius: 115, label: this.fireLit ? "Apagar lareira" : "Acender lareira", action: "toggle-fire" },
+                { x: 480, y: 893, radius: 52, label: "Sair da casa", destination: "world", sound: "door-open" },
               ]
             : [
                 { x: 625, y: 95, radius: 95, label: "Projetos", panel: "projects", sound: "chest-open" },
@@ -298,11 +326,12 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
           if (!isHouse) {
             this.addWorldCollisions();
-            this.cameras.main.startFollow(this.player, true, 0.09, 0.09);
+            // Deixa o telhado inteiro visível ao sair pela porta, mesmo com zoom.
+            this.cameras.main.startFollow(this.player, true, 0.09, 0.09, 0, 100);
           } else {
             this.addHouseCollisions();
             this.add
-              .text(615, 398, "!", {
+              .text(615, 637, "!", {
                 fontFamily: "Stardew Valley",
                 fontSize: "28px",
                 fontStyle: "bold",
@@ -319,7 +348,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           // Nenhuma máscara é desenhada atrás do fogo: permanecem somente
           // a abertura original da lareira e as três chamas animadas.
           this.fireGlow = this.add
-            .ellipse(740, 174, 118, 72, 0xff8a24, 0.22)
+            .ellipse(740, 278, 118, 72, 0xff8a24, 0.22)
             .setBlendMode(Phaser.BlendModes.ADD)
             .setDepth(6);
           this.createPixelFire();
@@ -403,7 +432,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           drawFlames();
           this.time.addEvent({ delay: 1000 / 7, loop: true, callback: drawFlames });
           this.fireSprite = this.add
-            .image(740, 181, textureKey)
+            .image(740, 290, textureKey)
             .setDisplaySize(72, 42)
             .setDepth(7);
         }
@@ -794,6 +823,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           window.removeEventListener("portfolio:mobile-direction", this.onMobileDirection);
           window.removeEventListener("portfolio:mobile-interact", this.onMobileInteract);
           window.removeEventListener("portfolio:panel-state", this.onPanelState);
+          this.scale.off(Phaser.Scale.Events.RESIZE, this.onGameResize);
         }
       }
 
@@ -811,8 +841,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           arcade: { debug: false },
         },
         scale: {
-          mode: Phaser.Scale.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
+          mode: Phaser.Scale.RESIZE,
         },
         scene: [PortfolioScene],
       });
@@ -828,7 +857,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
   return (
     <div
       ref={hostRef}
-      className="size-full [&>canvas]:block [&>canvas]:size-full! [&>canvas]:[image-rendering:pixelated]"
+      className="size-full [&>canvas]:block [&>canvas]:[image-rendering:pixelated]"
       aria-label="Mundo interativo do portfólio"
     />
   );
