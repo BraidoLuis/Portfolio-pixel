@@ -1,143 +1,127 @@
 # Portfólio Pixel — Luís Braido
 
-Portfólio interativo em formato de jogo 2D de exploração. O visitante escolhe
-um personagem, começa dentro de uma casa e explora um mundo com projetos,
-habilidades e experiências.
+Portfólio interativo com casa, mundo explorável, personagens, baús e painéis.
+Os projetos e demais conteúdos são editados diretamente no código.
+Esta versão não usa banco de dados, autenticação nem painel administrativo.
 
-## Stack
+## Tecnologias
 
-- Next.js 16, React 19 e TypeScript
-- Phaser
-- Tailwind CSS 4 — toda a interface usa classes utilitárias
-- Motion
-- Zustand
-- Supabase Auth, PostgreSQL e Storage
-- Vercel
+- Next.js, React e TypeScript
+- Tailwind CSS 4 para a interface
+- Motion para transições e animações da interface
+- Phaser para o mundo, movimentação, colisões e efeitos
+- Zustand e localStorage para personagem, áudio e descobertas
+- Vercel para publicação
 
-## Organização do código
+Os mapas atuais são imagens PNG com colisões configuradas em TypeScript.
 
-```text
-app/
-├── admin/                         # Rotas do painel administrativo
-├── globals.css                   # Tailwind, fontes, tema e keyframes globais
-├── layout.tsx                    # Metadados e layout raiz
-└── page.tsx                      # Entrada do portfólio
+## Rodar no computador
 
-components/
-├── admin/                        # Login e administração de projetos
-├── portfolio/
-│   ├── game/                     # Phaser, controles e configurações do mapa
-│   │   ├── game-screen.tsx
-│   │   ├── phaser-game.tsx
-│   │   ├── soundtrack-controller.tsx
-│   │   └── world-config.ts       # Colisões, máscara e áreas caminháveis
-│   ├── menu/                     # Tela inicial e seleção de personagem
-│   ├── panels/                   # Painéis, TV, mapa e projetos
-│   ├── store/                    # Estado global persistido com Zustand
-│   └── portfolio-app.tsx         # Orquestra menu e jogo
-└── ui/                           # Primitivos reutilizáveis de interface
-
-content/
-└── portfolio.ts                  # Perfil, habilidades e experiências locais
-
-lib/
-├── projects.ts                  # Leitura dos projetos publicados
-├── supabase/                    # Cliente do Supabase
-├── ui-styles.ts                 # Classes Tailwind reutilizadas
-└── utils.ts                     # Utilitários genéricos
-
-public/
-├── fonts/                       # Fontes Thin e Bold
-└── game/                        # Mapas, personagens, objetos e áudio
-
-supabase/
-└── schema.sql                   # Tabelas, Storage e políticas RLS
-```
-
-Consulte também [`docs/CUSTOMIZACAO.md`](docs/CUSTOMIZACAO.md) antes de alterar
-mapas, colisões, personagens ou painéis.
-
-## Funcionalidades
-
-- Tela inicial com apresentação, GitHub, LinkedIn e seleção de personagem
-- Movimentação por WASD, setas e controles mobile
-- Interior da casa com objetos interativos
-- Transição bidirecional entre casa e exterior
-- Placas, baús e balões de interação
-- Carrossel responsivo de projetos
-- Painéis de habilidades e experiências
-- Progresso e preferências locais
-- Espaço preparado para trilha sonora
-- Admin exclusivo para projetos
-- Rascunho, publicação, arquivamento e upload de capa
-- Fallback com projetos locais enquanto o Supabase não estiver configurado
-
-## Desenvolvimento
+Requisitos: Node.js 20.9 ou superior e npm.
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
-Validação antes de enviar alterações:
+Acesse <http://localhost:3000>. Não é necessário criar `.env.local`, configurar
+chaves ou manter um serviço de banco ativo. As configurações públicas ficam em
+`content/site.ts`.
+
+Para validar e testar o build de produção:
 
 ```bash
 npm run lint
-npm run build:vercel
+npm run typecheck
+npm run build
+npm run start
 ```
 
-## Configuração do Supabase
+## Onde editar
 
-1. Crie um projeto no Supabase.
-2. Execute `supabase/schema.sql` no SQL Editor.
-3. Em Authentication, crie manualmente seu usuário administrador.
-4. Copie o UUID do usuário e execute:
+| O que mudar | Arquivo ou pasta |
+| --- | --- |
+| Adicionar, editar, ocultar ou reordenar projetos | `content/projects.ts` |
+| Habilidades e experiências | `content/portfolio.ts` |
+| GitHub, LinkedIn e caminho da música | `content/site.ts` |
+| Capas dos projetos | `public/projects/` |
+| Apresentação, título e seleção de personagem | `components/portfolio/menu/start-screen.tsx` |
+| Tutorial, TV, formação e mapa | `components/portfolio/panels/static-panels.tsx` |
+| Colisões, máscara da casa e pontos de chegada | `components/portfolio/game/world-config.ts` |
+| Movimentação, lareira, sons e interações | `components/portfolio/game/phaser-game.tsx` |
+| Classes Tailwind reutilizadas | `lib/ui-styles.ts` |
+| Fontes, tema e scrollbar global | `app/globals.css` |
 
-```sql
-insert into public.admin_users (user_id)
-values ('UUID-DO-USUARIO');
+Consulte [docs/PROJETOS.md](docs/PROJETOS.md) para cadastrar um projeto e
+[docs/CUSTOMIZACAO.md](docs/CUSTOMIZACAO.md) para alterar o jogo.
+
+## Estrutura
+
+```text
+app/
+  page.tsx                 # Seleciona os projetos locais e inicia o portfólio
+  layout.tsx               # Metadados e layout raiz
+  globals.css              # Tailwind, tema, fontes, scrollbar e animações globais
+components/
+  portfolio/
+    game/                  # Phaser, controles, sons e configurações do mapa
+    menu/                  # Tela inicial e seleção de personagem
+    panels/                # Baús, TV, mapa e carrossel de projetos
+    store/                 # Preferências e estado do jogo
+    portfolio-app.tsx      # Integração entre menu e jogo
+  ui/                      # Componentes reutilizáveis de interface
+content/
+  projects.ts              # Projetos e seus tipos
+  portfolio.ts             # Habilidades e experiências
+  site.ts                  # Links e trilha sonora
+lib/
+  projects.ts              # Seleciona e ordena os projetos publicados
+  ui-styles.ts             # Classes Tailwind compartilhadas
+  utils.ts                 # Utilitários da interface
+public/
+  projects/                # Capas adicionadas diretamente ao projeto
+  game/                    # Cenários, personagens, objetos e áudios
+  fonts/                   # Fontes locais e licenças
 ```
 
-5. Desative o cadastro público nas configurações de Authentication.
-6. Preencha em `.env.local`:
+## Conteúdo e publicação
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua-chave-publicavel
-NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/in/seu-perfil
-NEXT_PUBLIC_SOUNDTRACK_URL=/game/audio/main-theme.mp3
+`app/page.tsx` seleciona os itens com `status: "published"`, ordena por
+`display_order` e os entrega ao jogo junto com a página. Abrir o baú não consulta
+uma API. `draft` e `archived` deixam o projeto fora da lista exibida.
+Esses estados controlam a exibição; arquivos de um repositório público continuam
+acessíveis pelo GitHub.
+
+Os botões de cada card são independentes: `live_url` controla o ambiente publicado
+e `repository_url` controla o repositório. Use `null` para ocultar um deles.
+A ausência de capa também é aceita.
+
+Durante o desenvolvimento, salve os arquivos para ver as mudanças. No site
+publicado, é necessário fazer commit, push e um novo deploy.
+
+## Áudio
+
+A música enviada já está configurada em `content/site.ts`:
+
+```ts
+soundtrackUrl: "/game/audio/Stardew-Valley-song.mp3",
 ```
 
-O painel fica em `/admin`. As políticas RLS garantem que visitantes vejam
-somente projetos publicados e que apenas o usuário cadastrado em `admin_users`
-possa alterar conteúdo.
+Para trocar, coloque a faixa em `public/game/audio/` e altere o caminho.
+Uma string vazia desativa a trilha. Os sons de passos, baús, porta, lareira, TV,
+mapa e seleção permanecem em `public/game/audio/effects/`.
 
-## Trilha sonora
+## Publicar na Vercel
 
-Coloque uma música licenciada em `public/game/audio/main-theme.mp3` ou use uma
-URL externa em `NEXT_PUBLIC_SOUNDTRACK_URL`. O áudio começa somente depois da
-interação do visitante e pode ser silenciado.
+1. Envie o código para seu repositório GitHub.
+2. Importe o repositório usando o framework **Next.js**.
+3. Mantenha `npm run build:vercel`, já definido em `vercel.json`.
+4. Publique. Esta versão não precisa de variáveis de ambiente.
 
-## Deploy na Vercel
+No projeto Vercel existente, as variáveis antigas de banco e autenticação podem
+ser removidas. Links e música são lidos de `content/site.ts`.
 
-1. Envie o repositório para o GitHub.
-2. Importe o repositório na Vercel.
-3. Cadastre as mesmas variáveis de ambiente.
-4. Faça o deploy.
+## Substituir a versão anterior
 
-O arquivo `vercel.json` direciona a Vercel para `npm run build:vercel`, que usa
-o build oficial do Next.js. Nenhuma alteração de código é necessária para a
-migração.
-
-## Conteúdo editável
-
-- Projetos: administrados pelo Supabase em `/admin`.
-- Habilidades, experiências e perfil: arquivos em `content/portfolio.ts`.
-- Colisões, contorno da casa e áreas caminháveis: `components/portfolio/game/world-config.ts`.
-- Regras e interações do jogo: `components/portfolio/game/phaser-game.tsx`.
-- Estilos compartilhados: classes Tailwind em `lib/ui-styles.ts`.
-
-O `app/globals.css` contém apenas a inicialização do Tailwind, as fontes, as
-variáveis do tema e animações globais. Novos componentes devem ser estilizados
-com Tailwind, evitando CSS tradicional e estilos espalhados pelo projeto.
+Veja [docs/MIGRACAO.md](docs/MIGRACAO.md) para usar a branch de conteúdo local,
+atualizar as dependências e publicar a mudança.

@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { experiences, skills } from "@/content/portfolio";
+import { siteConfig } from "@/content/site";
 import { pixelButtonClass } from "@/lib/ui-styles";
 import { PanelFrame, PanelKicker, TagList } from "./panel-frame";
 
@@ -180,7 +181,7 @@ export function ContactPanel({ onBack, linkedinUrl }: { onBack: () => void; link
         description="Conheça meus códigos e acompanhe minha trajetória profissional."
       />
       <div className="mb-4 mt-5 flex flex-wrap gap-3">
-        <a className={pixelButtonClass} href="https://github.com/BraidoLuis" target="_blank" rel="noreferrer">
+        <a className={pixelButtonClass} href={siteConfig.githubUrl} target="_blank" rel="noreferrer">
           <Code2 className="size-[18px]" aria-hidden="true" /> GitHub
         </a>
         <a className={pixelButtonClass} href={linkedinUrl} target="_blank" rel="noreferrer">

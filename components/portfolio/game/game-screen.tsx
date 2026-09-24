@@ -6,8 +6,9 @@ import { useEffect } from "react";
 import { PhaserGame } from "@/components/portfolio/game/phaser-game";
 import { ContentDialog } from "@/components/portfolio/panels/content-dialog";
 import { usePortfolioStore, type PanelType } from "@/components/portfolio/store/portfolio-store";
+import type { Project } from "@/content/projects";
 
-export function GameScreen() {
+export function GameScreen({ projects }: { projects: Project[] }) {
   const character = usePortfolioStore((state) => state.character);
   const returnToMenu = usePortfolioStore((state) => state.returnToMenu);
   const openPanel = usePortfolioStore((state) => state.openPanel);
@@ -56,7 +57,7 @@ export function GameScreen() {
         <DirectionButton direction="down" label="Mover para baixo"><ArrowDown /></DirectionButton>
       </div>
 
-      <ContentDialog />
+      <ContentDialog projects={projects} />
     </motion.section>
   );
 }

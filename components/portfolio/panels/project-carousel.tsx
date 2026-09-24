@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Code2, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { Project } from "@/content/portfolio";
+import type { Project } from "@/content/projects";
 import { pixelButtonClass } from "@/lib/ui-styles";
 
 export function ProjectCarousel({ projects }: { projects: Project[] }) {
@@ -40,8 +40,8 @@ export function ProjectCarousel({ projects }: { projects: Project[] }) {
       </DialogHeader>
 
       {projects.length === 0 ? (
-        <div className="grid min-h-[260px] place-items-center font-black text-[#f6d99c]">
-          Abrindo o baú de projetos...
+        <div className="grid min-h-[260px] place-items-center text-center font-black text-[#4b2b22]">
+          Novas missões serão adicionadas em breve.
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 max-[720px]:grid-cols-1">
@@ -49,23 +49,25 @@ export function ProjectCarousel({ projects }: { projects: Project[] }) {
         </div>
       )}
 
-      <div className="mt-4 flex items-center justify-center gap-4 font-black text-[#fff0bd]">
-        <PaginationButton
-          label="Projetos anteriores"
-          disabled={page === 0}
-          onClick={() => setPage((currentPage) => Math.max(0, currentPage - 1))}
-        >
-          <ArrowLeft aria-hidden="true" />
-        </PaginationButton>
-        <span>{page + 1} / {pageCount}</span>
-        <PaginationButton
-          label="Próximos projetos"
-          disabled={page >= pageCount - 1}
-          onClick={() => setPage((currentPage) => Math.min(pageCount - 1, currentPage + 1))}
-        >
-          <ArrowRight aria-hidden="true" />
-        </PaginationButton>
-      </div>
+      {projects.length > 0 && (
+        <div className="mt-4 flex items-center justify-center gap-4 font-black text-[#4b2b22]">
+          <PaginationButton
+            label="Projetos anteriores"
+            disabled={page === 0}
+            onClick={() => setPage((currentPage) => Math.max(0, currentPage - 1))}
+          >
+            <ArrowLeft aria-hidden="true" />
+          </PaginationButton>
+          <span>{page + 1} / {pageCount}</span>
+          <PaginationButton
+            label="Próximos projetos"
+            disabled={page >= pageCount - 1}
+            onClick={() => setPage((currentPage) => Math.min(pageCount - 1, currentPage + 1))}
+          >
+            <ArrowRight aria-hidden="true" />
+          </PaginationButton>
+        </div>
+      )}
     </div>
   );
 }

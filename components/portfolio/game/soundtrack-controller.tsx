@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { siteConfig } from "@/content/site";
 
 type SoundtrackControllerProps = {
   active: boolean;
@@ -10,7 +11,7 @@ type SoundtrackControllerProps = {
 
 export function SoundtrackController({ active, enabled, volume }: SoundtrackControllerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const soundtrackUrl = process.env.NEXT_PUBLIC_SOUNDTRACK_URL;
+  const soundtrackUrl = siteConfig.soundtrackUrl;
 
   useEffect(() => {
     if (!soundtrackUrl) return;

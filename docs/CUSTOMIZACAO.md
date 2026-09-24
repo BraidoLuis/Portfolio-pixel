@@ -63,14 +63,16 @@ components/portfolio/panels/
 
 ## Conteúdo
 
-Habilidades e experiências continuam no código:
+Todo o conteúdo é editado no código:
 
-```text
-content/portfolio.ts
-```
+- `content/projects.ts`: projetos, links, capas, status e ordem.
+- `content/portfolio.ts`: habilidades e experiências.
+- `content/site.ts`: GitHub, LinkedIn e caminho da música.
+- `public/projects/`: capas, usando caminhos como `/projects/capa.webp`.
 
-Projetos publicados são carregados do Supabase. Quando ele não estiver
-configurado, `fallbackProjects` será usado.
+Os projetos publicados são selecionados em `app/page.tsx` por `lib/projects.ts`
+e entregues ao jogo junto com a página. Não há consulta a banco nem autenticação.
+O passo a passo para novos cadastros está em [PROJETOS.md](PROJETOS.md).
 
 ## Tailwind
 
@@ -86,6 +88,7 @@ O `app/globals.css` deve permanecer restrito a:
 - imports do Tailwind;
 - fontes globais;
 - tokens do tema;
+- scrollbar global;
 - keyframes reutilizados globalmente.
 
 Evite criar novos seletores CSS para componentes.
@@ -112,6 +115,7 @@ Antes de enviar para a Vercel:
 ```bash
 npm install
 npm run lint
+npm run typecheck
 npm run build:vercel
 ```
 
