@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ProjectCarousel } from "@/components/portfolio/panels/project-carousel";
 import {
@@ -15,25 +15,18 @@ import {
   TvPanel,
 } from "@/components/portfolio/panels/static-panels";
 import { usePortfolioStore } from "@/components/portfolio/store/portfolio-store";
-import type { Project } from "@/content/portfolio";
-import { getPublishedProjects } from "@/lib/projects";
+import type { Project } from "@/content/projects";
+import { siteConfig } from "@/content/site";
 import { cn } from "@/lib/utils";
 
 const tvPanels = new Set(["tv", "about", "education", "contact"]);
 
-export function ContentDialog() {
+export function ContentDialog({ projects }: { projects: Project[] }) {
   const activePanel = usePortfolioStore((state) => state.activePanel);
   const closePanel = usePortfolioStore((state) => state.closePanel);
   const openPanel = usePortfolioStore((state) => state.openPanel);
-  const [projects, setProjects] = useState<Project[]>([]);
   const isTvContent = activePanel ? tvPanels.has(activePanel) : false;
-  const linkedinUrl = process.env.NEXT_PUBLIC_LINKEDIN_URL ?? "https://www.linkedin.com";
-
-  useEffect(() => {
-    if (activePanel === "projects" && projects.length === 0) {
-      void getPublishedProjects().then(setProjects);
-    }
-  }, [activePanel, projects.length]);
+  const linkedinUrl = siteConfig.linkedinUrl;
 
   useEffect(() => {
     window.dispatchEvent(

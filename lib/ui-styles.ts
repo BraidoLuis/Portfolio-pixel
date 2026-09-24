@@ -34,25 +34,3 @@ export const panelKickerClass =
 
 export const tagListClass =
   "mt-3 flex flex-wrap gap-1.5 [&>span]:border-2 [&>span]:border-[rgba(89,46,27,.36)] [&>span]:bg-[rgba(104,55,31,.13)] [&>span]:px-2 [&>span]:py-1 [&>span]:text-xs [&>span]:font-black";
-
-export const adminPageClass = [
-  "relative min-h-svh overflow-x-hidden p-[clamp(1rem,3vw,2.5rem)]",
-  "text-[#4b2b22]",
-  "bg-[linear-gradient(rgba(25,40,20,.45),rgba(25,40,20,.55)),url('/game/exterior-world.png')]",
-  "bg-cover bg-center bg-fixed",
-].join(" ");
-
-export const adminActionClass = [
-  "inline-flex min-h-10 items-center justify-center gap-1.5 px-3 py-2",
-  "border-[3px] border-[#2d1814] bg-[#9b542e] text-[.8rem] font-black text-[#fff1c1] no-underline",
-  "shadow-[inset_0_0_0_2px_#d58a48]",
-  "[&>svg]:size-[17px] disabled:pointer-events-none disabled:opacity-55",
-].join(" ");
-
-export const formLabelClass = "grid gap-1.5 text-[#653923] text-[.78rem] font-black";
-
-export const formControlClass = [
-  "w-full rounded-none border-[3px] border-[#7c472a] bg-[#fff0bd] p-3",
-  "font-bold text-[#4b2b22] outline-none",
-  "focus:shadow-[0_0_0_4px_rgba(255,226,143,.8)]",
-].join(" ");

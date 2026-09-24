@@ -7,8 +7,10 @@ import { SoundtrackController } from "@/components/portfolio/game/soundtrack-con
 import { StartScreen } from "@/components/portfolio/menu/start-screen";
 import { usePortfolioStore } from "@/components/portfolio/store/portfolio-store";
 import { UiSoundController } from "@/components/portfolio/game/ui-sound-controller";
+import type { Project } from "@/content/projects";
+import { siteConfig } from "@/content/site";
 
-export function PortfolioApp() {
+export function PortfolioApp({ projects }: { projects: Project[] }) {
   const character = usePortfolioStore((state) => state.character);
   const started = usePortfolioStore((state) => state.started);
   const soundEnabled = usePortfolioStore((state) => state.soundEnabled);
@@ -16,7 +18,7 @@ export function PortfolioApp() {
   const setCharacter = usePortfolioStore((state) => state.setCharacter);
   const startGame = usePortfolioStore((state) => state.startGame);
   const setSoundEnabled = usePortfolioStore((state) => state.setSoundEnabled);
-  const linkedinUrl = process.env.NEXT_PUBLIC_LINKEDIN_URL ?? "https://www.linkedin.com/in/lu%C3%ADs-felipe-dos-santos-braido-857a28352/";
+  const linkedinUrl = siteConfig.linkedinUrl;
 
   return (
     <main className="min-h-svh overflow-hidden">
@@ -49,7 +51,7 @@ export function PortfolioApp() {
             onStart={startGame}
           />
         ) : (
-          <GameScreen key="game" />
+          <GameScreen key="game" projects={projects} />
         )}
       </AnimatePresence>
     </main>
