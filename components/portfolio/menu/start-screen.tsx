@@ -160,7 +160,7 @@ function JourneyCard({ linkedinUrl }: { linkedinUrl: string }) {
         Supabase e também direciono meus estudos para Segurança da Informação.
       </p>
       <p className="mt-2.5 text-[#6f442e]">
-        Explore este mundo para conhecer os projetos, habilidades e experiências
+        Explore este mundo para conhecer os projetos, habilidades, experiências e certificações
         da minha jornada.
       </p>
       <nav className="mt-3.5 flex flex-wrap justify-center gap-2.5" aria-label="Redes profissionais">

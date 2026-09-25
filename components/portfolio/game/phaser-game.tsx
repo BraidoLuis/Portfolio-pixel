@@ -5,26 +5,21 @@ import type { Character, PanelType } from "@/components/portfolio/store/portfoli
 import {
   footFitsFloor,
   footHitsBox,
-  footHitsPolygon,
   getFootBounds,
   moveAlongWalkablePath,
   PLAYER_FOOTPRINT,
-  polygonContainsPoint,
-  type FootBounds,
   type Position,
 } from "@/components/portfolio/game/collision-geometry";
 import {
-  HIDDEN_HOUSE_PATHS,
   HOUSE_COLLISIONS,
   HOUSE_FLOOR_AREAS,
   SCENE_SIZE,
   SPAWN_POINTS,
-  WORLD_COLLISIONS,
   WORLD_FOREGROUND_REGIONS,
-  WORLD_SOLID_POLYGONS,
-  WORLD_SPECIAL_WALKABLE_AREAS,
+  WORLD_PLAYER_SIZE,
   type CollisionBox,
 } from "@/components/portfolio/game/world-config";
+import { canOccupyWorld } from "@/components/portfolio/game/world-walkability";
 
 type PhaserGameProps = {
   character: Character;
@@ -32,7 +27,7 @@ type PhaserGameProps = {
 
 type Facing = "down" | "left" | "right" | "up";
 
-const PLAYER_SIZE = { house: 96, world: 80 } as const;
+const PLAYER_SIZE = { house: 96, world: WORLD_PLAYER_SIZE } as const;
 const ZOOM_LIMITS = { min: -1, max: 3 } as const;
 
 type Interaction = {
@@ -76,9 +71,6 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private pausedByPanel = false;
         private transitioning = false;
         private lastWalkablePosition = { x: 0, y: 0 };
-        private worldCollisionPixels?: Uint8ClampedArray;
-        private worldCollisionWidth = 0;
-        private worldCollisionHeight = 0;
         private fireLit = true;
         private fireGlow?: import("phaser").GameObjects.Ellipse;
         private fireSprite?: import("phaser").GameObjects.Image;
@@ -123,9 +115,6 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.transitioning = false;
           this.nearest = null;
           this.mobileDirections.clear();
-          this.worldCollisionPixels = undefined;
-          this.worldCollisionWidth = 0;
-          this.worldCollisionHeight = 0;
           this.lastFootstepAt = 0;
           this.footstepVariation = 0;
           this.houseFollowing = false;
@@ -334,7 +323,6 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
           if (isHouse) this.addHouseLightingEffects();
           else {
-            this.prepareWorldCollisionMap();
             this.addExitSign();
             this.addWorldForegroundLayers();
           }
@@ -369,12 +357,14 @@ export function PhaserGame({ character }: PhaserGameProps) {
                 { x: 480, y: 893, radius: 52, label: "Sair da casa", destination: "world", sound: "door-open" },
               ]
             : [
-                { x: 625, y: 95, radius: 95, label: "Projetos", panel: "projects", sound: "chest-open" },
-                { x: 230, y: 405, radius: 135, label: "Habilidades", panel: "skills", sound: "chest-open" },
-                { x: 1015, y: 405, radius: 135, label: "Experiências", panel: "experiences", sound: "chest-open" },
-                { x: 620, y: 505, radius: 86, label: "Mapa do mundo", panel: "map", sound: "map-open" },
-                { x: 695, y: 1050, radius: 105, label: "Ver caminho dos baús", panel: "map", sound: "map-open" },
-                { x: 625, y: 900, radius: 72, label: "Entrar na casa", destination: "house", sound: "door-open" },
+                { x: 625, y: 113, radius: 110, label: "Projetos", panel: "projects", sound: "chest-open" },
+                { x: 300, y: 407, radius: 155, label: "Habilidades", panel: "skills", sound: "chest-open" },
+                { x: 949, y: 418, radius: 155, label: "Experiências", panel: "experiences", sound: "chest-open" },
+                { x: 201, y: 880, radius: 90, label: "Certificações", panel: "certifications", sound: "chest-open" },
+                { x: 767, y: 405, radius: 75, label: "Mapa geral", panel: "map", sound: "map-open" },
+                { x: 692, y: 585, radius: 75, label: "Mapa dos baús", panel: "map", sound: "map-open" },
+                { x: 708, y: 966, radius: 90, label: "Ver caminho dos baús", panel: "map", sound: "map-open" },
+                { x: 625, y: 892, radius: 94, label: "Entrar na casa", destination: "house", sound: "door-open" },
               ];
 
           this.prompt = this.add
@@ -394,7 +384,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
             .setVisible(false);
 
           if (!isHouse) {
-            this.addWorldCollisions();
+            // A geometria exterior usa a mesma área dos pés do validador de
+            // terreno. Colliders Arcade maiores fechariam os caminhos estreitos.
             // Deixa o telhado inteiro visível ao sair pela porta, mesmo com zoom.
             this.cameras.main.startFollow(this.player, true, 0.09, 0.09, 0, 100);
           } else {
@@ -614,83 +605,15 @@ export function PhaserGame({ character }: PhaserGameProps) {
           // Sprite dedicado com transparência real: evita carregar junto o
           // retângulo de grama que existia no recorte da textura do mapa.
           this.add
-            .image(695, 1050, "exit-direction-sign")
+            .image(708, 1002, "exit-direction-sign")
             .setOrigin(0.5, 1)
             .setDisplaySize(58, 82)
             .setFlipX(true)
-            .setDepth(1050);
+            .setDepth(1002);
         }
 
         private addHouseCollisions() {
           this.addCollisionBoxes(HOUSE_COLLISIONS);
-        }
-
-        private addWorldCollisions() {
-          this.addCollisionBoxes(WORLD_COLLISIONS);
-        }
-
-        private prepareWorldCollisionMap() {
-          const source = this.textures
-            .get("world")
-            .getSourceImage() as CanvasImageSource & { width: number; height: number };
-          const width = source.width || 1254;
-          const height = source.height || 1254;
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const context = canvas.getContext("2d", { willReadFrequently: true });
-          if (!context) return;
-
-          context.drawImage(source, 0, 0, width, height);
-          this.worldCollisionPixels = context.getImageData(0, 0, width, height).data;
-          this.worldCollisionWidth = width;
-          this.worldCollisionHeight = height;
-        }
-
-        private isEarthPixel(x: number, y: number) {
-          if (!this.worldCollisionPixels) return false;
-          const sampleX = Phaser.Math.Clamp(Math.round(x), 0, this.worldCollisionWidth - 1);
-          const sampleY = Phaser.Math.Clamp(Math.round(y), 0, this.worldCollisionHeight - 1);
-          const index = (sampleY * this.worldCollisionWidth + sampleX) * 4;
-          const red = this.worldCollisionPixels[index];
-          const green = this.worldCollisionPixels[index + 1];
-          const blue = this.worldCollisionPixels[index + 2];
-
-          // Os caminhos usam tons terrosos quentes; a vegetação é dominada
-          // pelo verde. A relação entre canais é mais estável que uma cor fixa.
-          return (
-            red > 118 &&
-            green > 70 &&
-            red > green * 1.08 &&
-            green > blue * 1.22 &&
-            red - blue > 42
-          );
-        }
-
-        private isWorldFootOnPath(foot: FootBounds) {
-          const xs = [foot.left + 1, (foot.left + foot.right) / 2, foot.right - 1];
-          const ys = [foot.top + 1, foot.bottom - 1];
-
-          return xs.every((x) => ys.every((y) => {
-            // Madeira, escadas e os caminhos escondidos pela fachada não são
-            // detectados pela cor do solo, mas continuam sendo áreas caminháveis.
-            if (WORLD_SPECIAL_WALKABLE_AREAS.some((area) =>
-              x >= area.x && x <= area.x + area.width &&
-              y >= area.y && y <= area.y + area.height,
-            ) || HIDDEN_HOUSE_PATHS.some((path) => polygonContainsPoint(path, x, y))) {
-              return true;
-            }
-
-            // Uma pedrinha isolada não fecha o caminho; a maior parte da área
-            // sob cada ponto do pé ainda precisa ter cor de terra.
-            let earthSamples = 0;
-            for (const dx of [-4, 0, 4]) {
-              for (const dy of [-4, 0, 4]) {
-                if (this.isEarthPixel(x + dx, y + dy)) earthSamples += 1;
-              }
-            }
-            return earthSamples >= 5;
-          }));
         }
 
         private addCollisionBoxes(blockers: CollisionBox[]) {
@@ -702,29 +625,26 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         private canOccupy(position: Position) {
+          if (this.area === "world") {
+            return canOccupyWorld(position);
+          }
+
           const foot = getFootBounds(position, PLAYER_SIZE[this.area]);
           const { width, height } = SCENE_SIZE[this.area];
           if (foot.left < 0 || foot.right > width || foot.top < 0 || foot.bottom > height) {
             return false;
           }
 
-          const blockers = this.area === "house" ? HOUSE_COLLISIONS : WORLD_COLLISIONS;
-          if (blockers.some((box) => footHitsBox(foot, box))) return false;
-
-          if (this.area === "house") return footFitsFloor(foot, HOUSE_FLOOR_AREAS);
-
-          if (WORLD_SOLID_POLYGONS.some((polygon) => footHitsPolygon(foot, polygon))) {
-            return false;
-          }
-          return this.isWorldFootOnPath(foot);
+          if (HOUSE_COLLISIONS.some((box) => footHitsBox(foot, box))) return false;
+          return footFitsFloor(foot, HOUSE_FLOOR_AREAS);
         }
 
         private validatePlayerPosition() {
           if (!this.player?.active) return;
 
-          // O Arcade já resolveu os objetos. A amostragem do terreno acontece
-          // em seguida, antes do render, e o percurso é verificado em passos
-          // curtos para impedir atravessar bordas mesmo em frames mais lentos.
+          // No quarto, o Arcade já resolveu os objetos. No exterior, a mesma
+          // regra dos pés trata caminhos e obstáculos. Verificamos o percurso
+          // em passos curtos para não atravessar bordas em frames lentos.
           const previous = this.lastWalkablePosition;
           const current = { x: this.player.x, y: this.player.y };
           const accepted = moveAlongWalkablePath(previous, current, (position) => this.canOccupy(position));

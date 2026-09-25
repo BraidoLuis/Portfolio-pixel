@@ -1,10 +1,11 @@
 import { Code2, ExternalLink } from "lucide-react";
+import Image from "next/image";
 import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { experiences, skills } from "@/content/portfolio";
+import { certifications, experiences, skills } from "@/content/portfolio";
 import { siteConfig } from "@/content/site";
 import { pixelButtonClass } from "@/lib/ui-styles";
 import { PanelFrame, PanelKicker, TagList } from "./panel-frame";
@@ -26,7 +27,7 @@ export function IntroPanel({ onContinue }: { onContinue: () => void }) {
         <p><strong>TV:</strong> escolha entre Sobre mim, Formação e Contatos.</p>
         <p><strong>Baú ao lado da cama:</strong> abra este guia novamente quando precisar.</p>
         <p><strong>Lareira:</strong> aproxime-se para acender ou apagar o fogo.</p>
-        <p><strong>Porta:</strong> saia para explorar projetos, habilidades e experiências.</p>
+        <p><strong>Porta:</strong> saia para explorar projetos, habilidades, experiências e certificações.</p>
       </div>
       <button type="button" className={pixelButtonClass} onClick={onContinue}>
         Começar a explorar
@@ -153,19 +154,53 @@ export function ExperiencesPanel() {
   );
 }
 
+export function CertificationsPanel() {
+  return (
+    <PanelFrame>
+      <PanelHeader
+        kicker="Baú de certificações"
+        title="Certificações"
+        description="Cursos e certificações que marcam meus estudos."
+      />
+      <div className="mt-5 grid gap-3">
+        {certifications.map((certification) => (
+          <article key={certification.id} className="border-[3px] border-[#875132] bg-[rgba(129,74,38,.12)] p-4">
+            <span className="text-xs font-black uppercase tracking-[.08em] text-[#875132]">{certification.issuer}</span>
+            <h3 className="mt-1 text-[1.1rem] text-[#6f3b25]">{certification.title}</h3>
+            <p className="mt-2 leading-normal">{certification.summary}</p>
+          </article>
+        ))}
+      </div>
+    </PanelFrame>
+  );
+}
+
 export function MapPanel() {
   return (
     <PanelFrame>
       <PanelHeader
         kicker="Placa de orientação"
         title="Onde estão os baús?"
-        description="Saindo da casa, siga pelo caminho principal até chegar à bifurcação."
+        description="Saindo da casa, siga pelas trilhas ao redor dela para chegar aos quatro baús."
       />
-      <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1 [&>span]:border-[3px] [&>span]:border-[rgba(93,49,28,.48)] [&>span]:bg-[rgba(105,57,31,.12)] [&>span]:p-4 [&>span]:text-center [&>span]:font-black">
-        <span>↑ Em frente: baú de Projetos</span>
-        <span>← À esquerda: baús de Habilidades</span>
-        <span>À direita: baús de Experiências →</span>
-        <span>↓ Para retornar: casa do Luís</span>
+      <div className="relative mx-auto mt-5 w-full max-w-[360px] overflow-hidden border-[4px] border-[#875132] shadow-[4px_4px_0_#4b2b22]">
+        <Image src="/game/exterior-world.png" width={1254} height={1254} alt="Visão geral do caminho e da casa, com quatro áreas de baús" className="block size-full" />
+        {[
+          { number: 1, label: "Projetos", x: "50%", y: "9%" },
+          { number: 2, label: "Habilidades", x: "24%", y: "33%" },
+          { number: 3, label: "Experiências", x: "76%", y: "34%" },
+          { number: 4, label: "Certificações", x: "16%", y: "70%" },
+        ].map((marker) => (
+          <span key={marker.number} aria-label={marker.label} className="absolute flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-[#fff0b6] bg-[#542b1b] text-sm font-black text-[#fff0b6] shadow-[2px_2px_0_#32180f]" style={{ left: marker.x, top: marker.y }}>
+            {marker.number}
+          </span>
+        ))}
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1 [&>span]:border-[3px] [&>span]:border-[rgba(93,49,28,.48)] [&>span]:bg-[rgba(105,57,31,.12)] [&>span]:p-3 [&>span]:font-black">
+        <span>1 · Projetos — ao norte, após a escada</span>
+        <span>2 · Habilidades — clareira à esquerda</span>
+        <span>3 · Experiências — clareira à direita</span>
+        <span>4 · Certificações — trilha inferior à esquerda da casa</span>
       </div>
     </PanelFrame>
   );

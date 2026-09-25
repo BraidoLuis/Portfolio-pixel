@@ -12,6 +12,7 @@ export type PanelType =
   | "projects"
   | "skills"
   | "experiences"
+  | "certifications"
   | "map"
   | "contact"
   | null;

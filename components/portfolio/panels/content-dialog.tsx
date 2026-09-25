@@ -6,6 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ProjectCarousel } from "@/components/portfolio/panels/project-carousel";
 import {
   AboutPanel,
+  CertificationsPanel,
   ContactPanel,
   EducationPanel,
   ExperiencesPanel,
@@ -59,6 +60,7 @@ export function ContentDialog({ projects }: { projects: Project[] }) {
             {activePanel === "projects" && <ProjectCarousel projects={projects} />}
             {activePanel === "skills" && <SkillsPanel onProjects={() => openPanel("projects")} />}
             {activePanel === "experiences" && <ExperiencesPanel />}
+            {activePanel === "certifications" && <CertificationsPanel />}
             {activePanel === "map" && <MapPanel />}
             {activePanel === "contact" && (
               <ContactPanel linkedinUrl={linkedinUrl} onBack={() => openPanel("tv")} />
