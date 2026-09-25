@@ -266,6 +266,10 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
         private stopWalking() {
           this.player.setVelocity(0);
+          this.stopWalkingAnimation();
+        }
+
+        private stopWalkingAnimation() {
           this.player.anims.stop();
           this.player.setFrame(this.idleFrame(this.facing));
         }
@@ -733,7 +737,9 @@ export function PhaserGame({ character }: PhaserGameProps) {
           if (distance > 0.1 && !this.pausedByPanel && this.player.anims.isPlaying) {
             this.playFootstep();
           } else if (distance <= 0.1 && !this.pausedByPanel) {
-            this.stopWalking();
+            // A física processa a velocidade definida em update() no próximo
+            // frame; zerá-la aqui prenderia o personagem no ponto inicial.
+            this.stopWalkingAnimation();
           }
 
           this.player.setDepth(this.player.y + PLAYER_SIZE[this.area] * 0.43);
