@@ -3,6 +3,17 @@
 import { useEffect, useRef } from "react";
 import type { Character, PanelType } from "@/components/portfolio/store/portfolio-store";
 import {
+  footFitsFloor,
+  footHitsBox,
+  footHitsPolygon,
+  getFootBounds,
+  moveAlongWalkablePath,
+  PLAYER_FOOTPRINT,
+  polygonContainsPoint,
+  type FootBounds,
+  type Position,
+} from "@/components/portfolio/game/collision-geometry";
+import {
   HIDDEN_HOUSE_PATHS,
   HOUSE_COLLISIONS,
   HOUSE_FLOOR_AREAS,
@@ -10,6 +21,7 @@ import {
   SPAWN_POINTS,
   WORLD_COLLISIONS,
   WORLD_FOREGROUND_REGIONS,
+  WORLD_SOLID_POLYGONS,
   WORLD_SPECIAL_WALKABLE_AREAS,
   type CollisionBox,
 } from "@/components/portfolio/game/world-config";
@@ -19,6 +31,9 @@ type PhaserGameProps = {
 };
 
 type Facing = "down" | "left" | "right" | "up";
+
+const PLAYER_SIZE = { house: 96, world: 80 } as const;
+const ZOOM_LIMITS = { min: -1, max: 3 } as const;
 
 type Interaction = {
   x: number;
@@ -70,6 +85,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private fireTexture?: import("phaser").Textures.CanvasTexture;
         private lastFootstepAt = 0;
         private footstepVariation = 0;
+        private zoomSteps = { house: 0, world: 0 };
+        private houseFollowing = false;
         private onMobileDirection = (event: Event) => {
           const detail = (event as CustomEvent<{ direction: string; active: boolean }>).detail;
           if (detail.active) this.mobileDirections.add(detail.direction);
@@ -80,7 +97,21 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private onPanelState = (event: Event) => {
           this.pausedByPanel = (event as CustomEvent<{ paused: boolean }>).detail.paused;
         };
+        private onZoomRequest = (event: Event) => {
+          const direction = (event as CustomEvent<{ direction: "in" | "out" }>).detail?.direction;
+          if (direction !== "in" && direction !== "out") return;
+
+          const next = Phaser.Math.Clamp(
+            this.zoomSteps[this.area] + (direction === "in" ? 1 : -1),
+            ZOOM_LIMITS.min,
+            ZOOM_LIMITS.max,
+          );
+          if (next === this.zoomSteps[this.area]) return;
+          this.zoomSteps[this.area] = next;
+          this.configureCamera(true);
+        };
         private onGameResize = () => this.configureCamera();
+        private onPlayerPostUpdate = () => this.validatePlayerPosition();
 
         constructor() {
           super("portfolio-world");
@@ -97,6 +128,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.worldCollisionHeight = 0;
           this.lastFootstepAt = 0;
           this.footstepVariation = 0;
+          this.houseFollowing = false;
         }
 
         preload() {
@@ -177,7 +209,10 @@ export function PhaserGame({ character }: PhaserGameProps) {
           window.addEventListener("portfolio:mobile-direction", this.onMobileDirection);
           window.addEventListener("portfolio:mobile-interact", this.onMobileInteract);
           window.addEventListener("portfolio:panel-state", this.onPanelState);
+          window.addEventListener("portfolio:zoom", this.onZoomRequest);
           this.scale.on(Phaser.Scale.Events.RESIZE, this.onGameResize);
+          // O Arcade já reposicionou o sprite quando este evento é disparado.
+          this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.onPlayerPostUpdate);
           this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupListeners());
           this.cameras.main.fadeIn(220, 20, 12, 8);
         }
@@ -235,37 +270,60 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.player.setFrame(this.idleFrame(this.facing));
         }
 
-        private configureCamera() {
+        private configureCamera(animated = false) {
           const camera = this.cameras.main;
+          const multiplier = 1 + this.zoomSteps[this.area] * 0.2;
+          camera.setBackgroundColor("#000000");
 
           if (this.area === "house") {
-            camera.stopFollow().removeBounds();
-            // Enquadra todo o quarto sem mudar a proporção do PNG quadrado.
-            const zoom = Math.min(
+            camera.removeBounds();
+            // O zoom inicial mostra todo o quarto, sem deformar a arte quadrada.
+            const fittedZoom = Math.min(
               this.scale.width / SCENE_SIZE.house.width,
               this.scale.height / SCENE_SIZE.house.height,
             );
-            camera.setZoom(Math.max(zoom, 0.01));
-            camera.centerOn(SCENE_SIZE.house.width / 2, SCENE_SIZE.house.height / 2);
+            const zoom = Math.max(fittedZoom * multiplier, 0.01);
+
+            if (this.zoomSteps.house > 0 && !this.houseFollowing) {
+              const { scrollX, scrollY } = camera;
+              camera.startFollow(this.player, true, 0.12, 0.12);
+              if (animated) camera.setScroll(scrollX, scrollY);
+              this.houseFollowing = true;
+            } else if (this.zoomSteps.house <= 0) {
+              if (this.houseFollowing) camera.stopFollow();
+              this.houseFollowing = false;
+              if (animated) {
+                camera.pan(SCENE_SIZE.house.width / 2, SCENE_SIZE.house.height / 2, 240, "Sine.easeInOut", true);
+              } else {
+                camera.centerOn(SCENE_SIZE.house.width / 2, SCENE_SIZE.house.height / 2);
+              }
+            }
+
+            if (animated) camera.zoomTo(zoom, 240, "Sine.easeInOut", true);
+            else camera.setZoom(zoom);
             return;
           }
 
-          // O exterior permanece em coordenadas nativas; a câmera percorre o
-          // mapa com zoom inteiro, sem ampliar a imagem por CSS.
-          const zoom = Math.max(
+          // Amplia o mapa pela câmera, preservando o tamanho nativo da textura.
+          const baseZoom = Math.max(
             this.scale.width < 720 ? 1 : 2,
             Math.ceil(this.scale.width / SCENE_SIZE.world.width),
             Math.ceil(this.scale.height / SCENE_SIZE.world.height),
           );
-          camera.setZoom(zoom);
-          camera.setBounds(0, 0, SCENE_SIZE.world.width, SCENE_SIZE.world.height);
+          const zoom = baseZoom * multiplier;
+          if (zoom < Math.max(this.scale.width / SCENE_SIZE.world.width, this.scale.height / SCENE_SIZE.world.height)) {
+            camera.removeBounds();
+          } else {
+            camera.setBounds(0, 0, SCENE_SIZE.world.width, SCENE_SIZE.world.height);
+          }
+          if (animated) camera.zoomTo(zoom, 240, "Sine.easeInOut", true);
+          else camera.setZoom(zoom);
         }
 
         private buildArea() {
           const isHouse = this.area === "house";
           const { width: worldWidth, height: worldHeight } = SCENE_SIZE[this.area];
           this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-          this.configureCamera();
 
           const background = this.add.image(worldWidth / 2, worldHeight / 2, isHouse ? "house" : "world");
           background.setDisplaySize(worldWidth, worldHeight).setDepth(0);
@@ -286,11 +344,18 @@ export function PhaserGame({ character }: PhaserGameProps) {
           );
           this.player
             .setFrame(this.idleFrame(this.facing))
-            .setDisplaySize(64, 64)
+            .setDisplaySize(PLAYER_SIZE[this.area], PLAYER_SIZE[this.area])
             .setCollideWorldBounds(true)
-            .setDepth(spawn.y + 28);
-          this.player.body!.setSize(this.player.width * 0.44, this.player.height * 0.18);
-          this.player.body!.setOffset(this.player.width * 0.28, this.player.height * 0.77);
+            .setDepth(spawn.y + PLAYER_SIZE[this.area] * 0.43);
+          this.player.body!.setSize(
+            this.player.width * PLAYER_FOOTPRINT.width,
+            this.player.height * PLAYER_FOOTPRINT.height,
+          );
+          this.player.body!.setOffset(
+            this.player.width * PLAYER_FOOTPRINT.offsetX,
+            this.player.height * PLAYER_FOOTPRINT.offsetY,
+          );
+          this.configureCamera();
 
           this.interactions = isHouse
             ? [
@@ -598,32 +663,30 @@ export function PhaserGame({ character }: PhaserGameProps) {
           );
         }
 
-        private isWorldPathWalkable(x: number, y: number) {
-          // Áreas de madeira/sombra e a clareira superior não compartilham a
-          // cor do caminho, por isso recebem limites explícitos e estreitos.
-          const specialWalkableAreas = WORLD_SPECIAL_WALKABLE_AREAS.map(
-            (area) => new Phaser.Geom.Rectangle(area.x, area.y, area.width, area.height),
-          );
-          const hiddenHousePaths = HIDDEN_HOUSE_PATHS.map(
-            (points) => new Phaser.Geom.Polygon(points.flat()),
-          );
-          if (
-            specialWalkableAreas.some((area) => Phaser.Geom.Rectangle.Contains(area, x, y)) ||
-            hiddenHousePaths.some((path) => Phaser.Geom.Polygon.Contains(path, x, y))
-          ) {
-            return true;
-          }
+        private isWorldFootOnPath(foot: FootBounds) {
+          const xs = [foot.left + 1, (foot.left + foot.right) / 2, foot.right - 1];
+          const ys = [foot.top + 1, foot.bottom - 1];
 
-          // Uma pequena amostragem ao redor dos pés tolera pedrinhas e tufos
-          // decorativos sem permitir que o personagem atravesse a grama.
-          const offsets = [-6, -3, 0, 3, 6];
-          let earthSamples = 0;
-          offsets.forEach((offsetY) => {
-            offsets.forEach((offsetX) => {
-              if (this.isEarthPixel(x + offsetX, y + 22 + offsetY)) earthSamples += 1;
-            });
-          });
-          return earthSamples >= 7;
+          return xs.every((x) => ys.every((y) => {
+            // Madeira, escadas e os caminhos escondidos pela fachada não são
+            // detectados pela cor do solo, mas continuam sendo áreas caminháveis.
+            if (WORLD_SPECIAL_WALKABLE_AREAS.some((area) =>
+              x >= area.x && x <= area.x + area.width &&
+              y >= area.y && y <= area.y + area.height,
+            ) || HIDDEN_HOUSE_PATHS.some((path) => polygonContainsPoint(path, x, y))) {
+              return true;
+            }
+
+            // Uma pedrinha isolada não fecha o caminho; a maior parte da área
+            // sob cada ponto do pé ainda precisa ter cor de terra.
+            let earthSamples = 0;
+            for (const dx of [-4, 0, 4]) {
+              for (const dy of [-4, 0, 4]) {
+                if (this.isEarthPixel(x + dx, y + dy)) earthSamples += 1;
+              }
+            }
+            return earthSamples >= 5;
+          }));
         }
 
         private addCollisionBoxes(blockers: CollisionBox[]) {
@@ -634,38 +697,47 @@ export function PhaserGame({ character }: PhaserGameProps) {
           });
         }
 
-        private keepPlayerOnWorldPaths() {
-          if (this.area === "house") {
-            // A textura possui uma moldura e um vazio preto ao redor do quarto.
-            // O assoalho principal e o corredor da porta formam uma área em T:
-            // assim as laterais inferiores continuam bloqueadas, sem impedir a saída.
-            const roomFloorAreas = HOUSE_FLOOR_AREAS.map(
-              (area) => new Phaser.Geom.Rectangle(area.x, area.y, area.width, area.height),
-            );
-            const isOnFloor = roomFloorAreas.some((area) =>
-              Phaser.Geom.Rectangle.Contains(area, this.player.x, this.player.y),
-            );
-
-            if (isOnFloor) {
-              this.lastWalkablePosition = { x: this.player.x, y: this.player.y };
-              return true;
-            }
-
-            this.player.setPosition(this.lastWalkablePosition.x, this.lastWalkablePosition.y);
-            this.stopWalking();
+        private canOccupy(position: Position) {
+          const foot = getFootBounds(position, PLAYER_SIZE[this.area]);
+          const { width, height } = SCENE_SIZE[this.area];
+          if (foot.left < 0 || foot.right > width || foot.top < 0 || foot.bottom > height) {
             return false;
           }
 
-          const isWalkable = this.isWorldPathWalkable(this.player.x, this.player.y);
+          const blockers = this.area === "house" ? HOUSE_COLLISIONS : WORLD_COLLISIONS;
+          if (blockers.some((box) => footHitsBox(foot, box))) return false;
 
-          if (isWalkable) {
-            this.lastWalkablePosition = { x: this.player.x, y: this.player.y };
-            return true;
+          if (this.area === "house") return footFitsFloor(foot, HOUSE_FLOOR_AREAS);
+
+          if (WORLD_SOLID_POLYGONS.some((polygon) => footHitsPolygon(foot, polygon))) {
+            return false;
+          }
+          return this.isWorldFootOnPath(foot);
+        }
+
+        private validatePlayerPosition() {
+          if (!this.player?.active) return;
+
+          // O Arcade já resolveu os objetos. A amostragem do terreno acontece
+          // em seguida, antes do render, e o percurso é verificado em passos
+          // curtos para impedir atravessar bordas mesmo em frames mais lentos.
+          const previous = this.lastWalkablePosition;
+          const current = { x: this.player.x, y: this.player.y };
+          const accepted = moveAlongWalkablePath(previous, current, (position) => this.canOccupy(position));
+          if (Phaser.Math.Distance.Between(current.x, current.y, accepted.x, accepted.y) > 0.01) {
+            (this.player.body as import("phaser").Physics.Arcade.Body).reset(accepted.x, accepted.y);
           }
 
-          this.player.setPosition(this.lastWalkablePosition.x, this.lastWalkablePosition.y);
-          this.stopWalking();
-          return false;
+          const distance = Phaser.Math.Distance.Between(previous.x, previous.y, accepted.x, accepted.y);
+          this.lastWalkablePosition = accepted;
+          if (distance > 0.1 && !this.pausedByPanel && this.player.anims.isPlaying) {
+            this.playFootstep();
+          } else if (distance <= 0.1 && !this.pausedByPanel) {
+            this.stopWalking();
+          }
+
+          this.player.setDepth(this.player.y + PLAYER_SIZE[this.area] * 0.43);
+          this.updateInteraction();
         }
 
         private playFootstep() {
@@ -702,11 +774,6 @@ export function PhaserGame({ character }: PhaserGameProps) {
             return;
           }
 
-          if (!this.keepPlayerOnWorldPaths()) {
-            this.updateInteraction();
-            return;
-          }
-
           const left = this.cursors.left.isDown || this.keys.A.isDown || this.mobileDirections.has("left");
           const right = this.cursors.right.isDown || this.keys.D.isDown || this.mobileDirections.has("right");
           const up = this.cursors.up.isDown || this.keys.W.isDown || this.mobileDirections.has("up");
@@ -725,13 +792,9 @@ export function PhaserGame({ character }: PhaserGameProps) {
             if (this.player.anims.currentAnim?.key !== animation || !this.player.anims.isPlaying) {
               this.player.anims.play(animation, true);
             }
-            this.playFootstep();
           } else {
             this.stopWalking();
           }
-
-          this.player.setDepth(this.player.y + 28);
-          this.updateInteraction();
         }
 
         private updateInteraction() {
@@ -823,7 +886,9 @@ export function PhaserGame({ character }: PhaserGameProps) {
           window.removeEventListener("portfolio:mobile-direction", this.onMobileDirection);
           window.removeEventListener("portfolio:mobile-interact", this.onMobileInteract);
           window.removeEventListener("portfolio:panel-state", this.onPanelState);
+          window.removeEventListener("portfolio:zoom", this.onZoomRequest);
           this.scale.off(Phaser.Scale.Events.RESIZE, this.onGameResize);
+          this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.onPlayerPostUpdate);
         }
       }
 
@@ -832,7 +897,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
         parent: hostRef.current,
         width: 960,
         height: 600,
-        backgroundColor: "#160d0b",
+        backgroundColor: "#000000",
         pixelArt: true,
         antialias: false,
         roundPixels: true,

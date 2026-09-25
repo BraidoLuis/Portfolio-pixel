@@ -92,17 +92,14 @@ function TitleBoard() {
   return (
     <motion.header
       className={[
-        "relative z-2 grid",
-        "aspect-[3.15/1] w-[min(1280px,96vw)]",
+        "relative z-2 grid overflow-hidden",
+        "aspect-[762/311] w-[min(1130px,94vw,118svh)]",
         "place-content-center",
-        "bg-[url('/game/menu-title-board.png')]",
-        "bg-[length:100%_100%] bg-center bg-no-repeat",
-        "px-[8%] pb-[6%] pt-[7%]",
+        "px-[11%] py-[6%]",
         "text-center text-[#71371e]",
         "[filter:drop-shadow(0_10px_0_rgba(46,18,12,.72))]",
         "[text-shadow:3px_3px_0_#f6cf81,1px_0_0_#4e2418]",
-        "max-[720px]:aspect-[2.8/1] max-[720px]:w-[98vw]",
-        "max-[720px]:px-[6%]",
+        "max-[720px]:w-[94vw] max-[720px]:px-[7%]",
       ].join(" ")}
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -112,10 +109,20 @@ function TitleBoard() {
         damping: 13,
       }}
     >
+      {/* Recorta somente a transparência externa do PNG, sem deformar a moldura. */}
+      <Image
+        src="/game/menu-title-board.png"
+        alt=""
+        width={775}
+        height={322}
+        priority
+        unoptimized
+        className="pointer-events-none absolute left-[-1.31%] top-[-2.89%] h-[103.54%] w-[101.71%] max-w-none [image-rendering:pixelated]"
+      />
       <span
         className={[
-          "block whitespace-nowrap",
-          "text-[clamp(1.15rem,4.1vw,3.5rem)]",
+          "relative block whitespace-nowrap",
+          "text-[clamp(1.15rem,2.65vw,2.65rem)]",
           "font-black leading-none tracking-[.035em]",
           "max-[720px]:text-[clamp(.85rem,4vw,1.35rem)]",
           "max-[720px]:tracking-normal",
@@ -126,7 +133,7 @@ function TitleBoard() {
 
       <strong
         className={[
-          "mt-3 block whitespace-nowrap",
+          "relative mt-3 block whitespace-nowrap",
           "text-[clamp(1rem,2.2vw,2rem)]",
           "leading-none tracking-[.08em]",
           "max-[720px]:mt-1.5",

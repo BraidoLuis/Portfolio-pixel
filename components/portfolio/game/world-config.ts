@@ -35,7 +35,7 @@ export const HOUSE_COLLISIONS: CollisionBox[] = [
   { x: 170, y: 256, width: 170, height: 205 },
   { x: 475, y: 264, width: 162, height: 131 },
   { x: 740, y: 248, width: 195, height: 211 },
-  { x: 773, y: 688, width: 190, height: 344 },
+  { x: 774, y: 674, width: 180, height: 315 },
   { x: 615, y: 728, width: 54, height: 77 },
   { x: 122, y: 712, width: 78, height: 147 },
 ];
@@ -60,6 +60,13 @@ export const WORLD_COLLISIONS: CollisionBox[] = [
   { x: 505, y: 970, width: 112, height: 34 },
   { x: 714, y: 970, width: 126, height: 34 },
   { x: 782, y: 922, width: 92, height: 90 },
+];
+
+// O retângulo da fachada começa abaixo do topo do telhado. Esta área fecha
+// somente a inclinação real, preservando os caminhos dos dois lados da casa.
+export const WORLD_SOLID_POLYGONS: Point[][] = [
+  [[625, 675], [800, 790], [800, 820], [450, 820], [450, 790]],
+  [[532, 684], [572, 684], [572, 753], [532, 753]], // Chaminé.
 ];
 
 export const HOUSE_FLOOR_AREAS: RectangleArea[] = [
