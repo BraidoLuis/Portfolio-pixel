@@ -14,6 +14,22 @@ export type Experience = {
   highlights: string[];
 };
 
+export type Certification = {
+  id: string;
+  title: string;
+  issuer: string;
+  summary: string;
+};
+
+export const certifications: Certification[] = [
+  {
+    id: "cisco-introducao-ciberseguranca",
+    title: "Introdução à Cibersegurança",
+    issuer: "Cisco",
+    summary: "Curso introdutório sobre ameaças digitais, proteção de dados e fundamentos da segurança da informação.",
+  },
+];
+
 export const skills: Skill[] = [
   {
     id: "frontend",

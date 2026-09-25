@@ -24,7 +24,7 @@ export function GameScreen({ projects }: { projects: Project[] }) {
 
   return (
     <motion.section
-      className="relative h-svh w-screen overflow-hidden bg-[#160d0b]"
+      className="relative h-svh w-screen overflow-hidden bg-black"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -37,6 +37,27 @@ export function GameScreen({ projects }: { projects: Project[] }) {
         </button>
         <button className={toolbarButtonClass} type="button" onClick={() => openPanel("map")}>
           <Map aria-hidden="true" /> Mapa
+        </button>
+      </div>
+
+      <div className="absolute right-4 top-[4.5rem] z-20 flex gap-2 max-[720px]:top-4" role="group" aria-label="Zoom do jogo">
+        <button
+          className={zoomButtonClass}
+          type="button"
+          title="Diminuir zoom"
+          aria-label="Diminuir zoom"
+          onClick={() => window.dispatchEvent(new CustomEvent("portfolio:zoom", { detail: { direction: "out" } }))}
+        >
+          −
+        </button>
+        <button
+          className={zoomButtonClass}
+          type="button"
+          title="Aumentar zoom"
+          aria-label="Aumentar zoom"
+          onClick={() => window.dispatchEvent(new CustomEvent("portfolio:zoom", { detail: { direction: "in" } }))}
+        >
+          +
         </button>
       </div>
 
@@ -94,6 +115,9 @@ function DirectionButton({
 
 const toolbarButtonClass =
   "inline-flex min-h-[42px] items-center gap-1.5 border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-3 py-2 font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48] [&>svg]:size-[18px] max-[720px]:w-12 max-[720px]:justify-center max-[720px]:text-[0px] max-[720px]:[&>svg]:size-5";
+
+const zoomButtonClass =
+  "grid size-[42px] place-items-center border-[3px] border-[#2d1814] bg-[repeating-linear-gradient(0deg,#8f4b28_0_9px,#7b3c22_9px_11px)] text-[26px] font-black leading-none text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48,0_3px_0_#30160f] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 focus-visible:outline-3 focus-visible:outline-[#ffe59a]";
 
 const mobileControlClass =
   "grid size-[52px] touch-none place-items-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.88)] font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]";

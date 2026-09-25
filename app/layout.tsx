@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Portfólio Pixel — Luís Braido",
   description:
-    "Explore os projetos, habilidades e experiências de Luís Braido em um portfólio interativo inspirado em jogos de exploração.",
+    "Explore os projetos, habilidades, experiências e certificações de Luís Braido em um portfólio interativo inspirado em jogos de exploração.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
