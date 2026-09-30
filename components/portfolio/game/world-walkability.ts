@@ -1,36 +1,35 @@
+﻿import { footHitsBox, getFootBounds, type Position } from "./collision-geometry";
 import {
-  footHitsBox,
-  footHitsPolygon,
-  getFootBounds,
-  polygonContainsPoint,
-  type FootBounds,
-  type Position,
-} from "./collision-geometry";
-import {
-  SCENE_SIZE,
-  WORLD_COLLISIONS,
-  WORLD_MARKED_WALKABLE_POLYGONS,
-  WORLD_PLAYER_SIZE,
-  WORLD_SOLID_POLYGONS,
-} from "./world-config";
+  EXTERIOR_COLUMNS,
+  EXTERIOR_OBJECTS,
+  EXTERIOR_ROWS,
+  EXTERIOR_TILES,
+  TILE_SIZE,
+} from "./exterior-map";
+import { WORLD_PLAYER_SIZE } from "./world-config";
 
-function footFitsMarkedPath(foot: FootBounds): boolean {
-  const xs = [foot.left + 1, (foot.left + foot.right) / 2, foot.right - 1];
-  const ys = [foot.top + 1, foot.bottom - 1];
+const blockers = EXTERIOR_OBJECTS.flatMap((object) => object.collision ? [object.collision] : []);
+const platforms = EXTERIOR_OBJECTS.flatMap((object) => object.walkable ? [object.walkable] : []);
 
-  // Cada ponto pode cair em um polígono diferente ao cruzar uma emenda.
-  return xs.every((x) => ys.every((y) =>
-    WORLD_MARKED_WALKABLE_POLYGONS.some((polygon) => polygonContainsPoint(polygon, x, y)),
-  ));
-}
-
+/** Every tile touched by the character's actual feet must support the player. */
 export function canOccupyWorld(position: Position): boolean {
   const foot = getFootBounds(position, WORLD_PLAYER_SIZE);
-  const { width, height } = SCENE_SIZE.world;
-  if (foot.left < 0 || foot.right > width || foot.top < 0 || foot.bottom > height) {
-    return false;
+  if (foot.left < 0 || foot.right > EXTERIOR_COLUMNS * TILE_SIZE ||
+      foot.top < 0 || foot.bottom > EXTERIOR_ROWS * TILE_SIZE) return false;
+
+  if (blockers.some((box) => footHitsBox(foot, box))) return false;
+  const onPlatform = platforms.some((area) => foot.left >= area.x &&
+    foot.right <= area.x + area.width && foot.top >= area.y && foot.bottom <= area.y + area.height);
+
+  const firstColumn = Math.floor(foot.left / TILE_SIZE);
+  const lastColumn = Math.floor((foot.right - 0.001) / TILE_SIZE);
+  const firstRow = Math.floor(foot.top / TILE_SIZE);
+  const lastRow = Math.floor((foot.bottom - 0.001) / TILE_SIZE);
+  for (let row = firstRow; row <= lastRow; row += 1) {
+    for (let column = firstColumn; column <= lastColumn; column += 1) {
+      const tile = EXTERIOR_TILES[row][column];
+      if (tile === "cliff" || (tile === "water" && !onPlatform)) return false;
+    }
   }
-  if (WORLD_COLLISIONS.some((box) => footHitsBox(foot, box))) return false;
-  if (WORLD_SOLID_POLYGONS.some((polygon) => footHitsPolygon(foot, polygon))) return false;
-  return footFitsMarkedPath(foot);
+  return true;
 }

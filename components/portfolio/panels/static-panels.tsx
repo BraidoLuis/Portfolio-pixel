@@ -1,5 +1,5 @@
 import { Code2, ExternalLink } from "lucide-react";
-import Image from "next/image";
+import { WorldMinimap } from "@/components/portfolio/game/world-minimap";
 import {
   DialogDescription,
   DialogHeader,
@@ -183,19 +183,7 @@ export function MapPanel() {
         title="Onde estão os baús?"
         description="Saindo da casa, siga pelas trilhas ao redor dela para chegar aos quatro baús."
       />
-      <div className="relative mx-auto mt-5 w-full max-w-[360px] overflow-hidden border-[4px] border-[#875132] shadow-[4px_4px_0_#4b2b22]">
-        <Image src="/game/exterior-world.png" width={1254} height={1254} alt="Visão geral do caminho e da casa, com quatro áreas de baús" className="block size-full" />
-        {[
-          { number: 1, label: "Projetos", x: "50%", y: "9%" },
-          { number: 2, label: "Habilidades", x: "24%", y: "33%" },
-          { number: 3, label: "Experiências", x: "76%", y: "34%" },
-          { number: 4, label: "Certificações", x: "16%", y: "70%" },
-        ].map((marker) => (
-          <span key={marker.number} aria-label={marker.label} className="absolute flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-[#fff0b6] bg-[#542b1b] text-sm font-black text-[#fff0b6] shadow-[2px_2px_0_#32180f]" style={{ left: marker.x, top: marker.y }}>
-            {marker.number}
-          </span>
-        ))}
-      </div>
+      <WorldMinimap />
       <div className="mt-5 grid grid-cols-2 gap-3 max-[720px]:grid-cols-1 [&>span]:border-[3px] [&>span]:border-[rgba(93,49,28,.48)] [&>span]:bg-[rgba(105,57,31,.12)] [&>span]:p-3 [&>span]:font-black">
         <span>1 · Projetos — ao norte, após a escada</span>
         <span>2 · Habilidades — clareira à esquerda</span>

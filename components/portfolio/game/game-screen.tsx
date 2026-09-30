@@ -2,8 +2,10 @@
 
 import { motion } from "motion/react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, House, Map } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PhaserGame } from "@/components/portfolio/game/phaser-game";
+import { ZOOM_LIMITS, type ZoomState } from "@/components/portfolio/game/game-zoom";
+import { FishingHud } from "./fishing-hud";
 import { ContentDialog } from "@/components/portfolio/panels/content-dialog";
 import { usePortfolioStore, type PanelType } from "@/components/portfolio/store/portfolio-store";
 import type { Project } from "@/content/projects";
@@ -12,6 +14,18 @@ export function GameScreen({ projects }: { projects: Project[] }) {
   const character = usePortfolioStore((state) => state.character);
   const returnToMenu = usePortfolioStore((state) => state.returnToMenu);
   const openPanel = usePortfolioStore((state) => state.openPanel);
+  const [zoom, setZoom] = useState<ZoomState>({ area: "house", step: 0, ...ZOOM_LIMITS });
+  const zoomPercent = Math.round((1 + zoom.step * 0.2) * 100);
+  const zoomArea = zoom.area === "house" ? "Quarto" : "Exterior";
+
+  useEffect(() => {
+    const handleZoomState = (event: Event) => {
+      setZoom((event as CustomEvent<ZoomState>).detail);
+    };
+    window.addEventListener("portfolio:zoom-state", handleZoomState);
+    window.dispatchEvent(new Event("portfolio:zoom-state-request"));
+    return () => window.removeEventListener("portfolio:zoom-state", handleZoomState);
+  }, []);
 
   useEffect(() => {
     const handlePanel = (event: Event) => {
@@ -30,6 +44,7 @@ export function GameScreen({ projects }: { projects: Project[] }) {
       exit={{ opacity: 0 }}
     >
       <PhaserGame character={character} />
+      <FishingHud />
 
       <div className="absolute right-4 top-4 z-20 flex gap-2 max-[720px]:bottom-[max(1rem,env(safe-area-inset-bottom))] max-[720px]:top-auto">
         <button className={toolbarButtonClass} type="button" onClick={returnToMenu}>
@@ -46,15 +61,26 @@ export function GameScreen({ projects }: { projects: Project[] }) {
           type="button"
           title="Diminuir zoom"
           aria-label="Diminuir zoom"
+          disabled={zoom.step <= zoom.min}
           onClick={() => window.dispatchEvent(new CustomEvent("portfolio:zoom", { detail: { direction: "out" } }))}
         >
           −
         </button>
+        <output
+          className="flex min-w-[68px] flex-col items-center justify-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-2 text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]"
+          aria-live="polite"
+          aria-label={`Zoom do ${zoomArea.toLowerCase()}: ${zoomPercent}%`}
+          title={`Zoom do ${zoomArea.toLowerCase()} em relação ao enquadramento padrão`}
+        >
+          <span className="text-[9px] font-bold leading-3">{zoomArea}</span>
+          <span className="text-sm font-black leading-4">{zoomPercent}%</span>
+        </output>
         <button
           className={zoomButtonClass}
           type="button"
           title="Aumentar zoom"
           aria-label="Aumentar zoom"
+          disabled={zoom.step >= zoom.max}
           onClick={() => window.dispatchEvent(new CustomEvent("portfolio:zoom", { detail: { direction: "in" } }))}
         >
           +
@@ -117,7 +143,7 @@ const toolbarButtonClass =
   "inline-flex min-h-[42px] items-center gap-1.5 border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-3 py-2 font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48] [&>svg]:size-[18px] max-[720px]:w-12 max-[720px]:justify-center max-[720px]:text-[0px] max-[720px]:[&>svg]:size-5";
 
 const zoomButtonClass =
-  "grid size-[42px] place-items-center border-[3px] border-[#2d1814] bg-[repeating-linear-gradient(0deg,#8f4b28_0_9px,#7b3c22_9px_11px)] text-[26px] font-black leading-none text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48,0_3px_0_#30160f] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 focus-visible:outline-3 focus-visible:outline-[#ffe59a]";
+  "grid size-[42px] place-items-center border-[3px] border-[#2d1814] bg-[repeating-linear-gradient(0deg,#8f4b28_0_9px,#7b3c22_9px_11px)] text-[26px] font-black leading-none text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48,0_3px_0_#30160f] transition-transform enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 disabled:cursor-default disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-[#ffe59a]";
 
 const mobileControlClass =
   "grid size-[52px] touch-none place-items-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.88)] font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]";

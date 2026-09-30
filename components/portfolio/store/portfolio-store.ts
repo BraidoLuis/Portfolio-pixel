@@ -24,6 +24,9 @@ type PortfolioStore = {
   soundEnabled: boolean;
   volume: number;
   discovered: string[];
+  fishCaught: number;
+  fishingAchievement: boolean;
+  recordFishCatch: () => boolean;
   setCharacter: (character: Character) => void;
   startGame: () => void;
   returnToMenu: () => void;
@@ -42,6 +45,17 @@ export const usePortfolioStore = create<PortfolioStore>()(
       soundEnabled: true,
       volume: 0.35,
       discovered: [],
+      fishCaught: 0,
+      fishingAchievement: false,
+      recordFishCatch: () => {
+        let unlocked = false;
+        set((state) => {
+          const fishCaught = state.fishCaught + 1;
+          unlocked = !state.fishingAchievement && fishCaught >= 3;
+          return { fishCaught, fishingAchievement: state.fishingAchievement || unlocked };
+        });
+        return unlocked;
+      },
       setCharacter: (character) => set({ character }),
       startGame: () => set({ started: true, activePanel: null }),
       returnToMenu: () => set({ started: false, activePanel: null }),
@@ -64,6 +78,8 @@ export const usePortfolioStore = create<PortfolioStore>()(
         soundEnabled: state.soundEnabled,
         volume: state.volume,
         discovered: state.discovered,
+        fishCaught: state.fishCaught,
+        fishingAchievement: state.fishingAchievement,
       }),
     },
   ),

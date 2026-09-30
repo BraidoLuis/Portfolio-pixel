@@ -2,33 +2,38 @@
 
 import { useEffect, useRef } from "react";
 import type { Character, PanelType } from "@/components/portfolio/store/portfolio-store";
+import { usePortfolioStore } from "@/components/portfolio/store/portfolio-store";
 import {
-  footFitsFloor,
-  footHitsBox,
-  getFootBounds,
   moveAlongWalkablePath,
   PLAYER_FOOTPRINT,
   type Position,
 } from "@/components/portfolio/game/collision-geometry";
 import {
-  HOUSE_COLLISIONS,
-  HOUSE_FLOOR_AREAS,
   SCENE_SIZE,
   SPAWN_POINTS,
-  WORLD_FOREGROUND_REGIONS,
   WORLD_PLAYER_SIZE,
-  type CollisionBox,
 } from "@/components/portfolio/game/world-config";
 import { canOccupyWorld } from "@/components/portfolio/game/world-walkability";
+import { buildExterior, preloadExterior } from "./exterior-renderer";
+import { WORLD_INTERACTIONS } from "./exterior-map";
+import { buildHouse, preloadHouse, type HouseView } from "./house-renderer";
+import { HOUSE_INTERACTIONS, HOUSE_LIGHTS, HOUSE_MARKER, HOUSE_PLAYER_SIZE, type HouseInteraction, type HouseRestId } from "./house-map";
+import { canOccupyHouse } from "./house-walkability";
+import { getRestPoseFrame, HouseRestController, InteractionPressGate } from "./house-rest";
+import { ZOOM_LIMITS } from "./game-zoom";
+import { FishingController, getFishingAnimation, WORLD_ACTIVITIES, type WorldActivity } from "./world-activities";
+import { createFishingView, type FishingView } from "./fishing-renderer";
+import { CHARACTER_MOTION_TEXTURE, createDiagonalAnimations, getDiagonalFrame, getFishingPoseFrame,
+  getMovementFacing, isDiagonalDirection, preloadCharacterMotion, type CharacterFacing } from "./character-motion";
+import type { ExteriorAtmosphereView } from "./exterior-atmosphere";
 
 type PhaserGameProps = {
   character: Character;
 };
 
-type Facing = "down" | "left" | "right" | "up";
+type Facing = CharacterFacing;
 
-const PLAYER_SIZE = { house: 96, world: WORLD_PLAYER_SIZE } as const;
-const ZOOM_LIMITS = { min: -1, max: 3 } as const;
+const PLAYER_SIZE = { house: HOUSE_PLAYER_SIZE, world: WORLD_PLAYER_SIZE } as const;
 
 type Interaction = {
   x: number;
@@ -37,8 +42,12 @@ type Interaction = {
   label: string;
   panel?: Exclude<PanelType, null>;
   destination?: "house" | "world";
-  action?: "toggle-fire";
-  sound?: "chest-open" | "door-open" | "map-open" | "tv-turn-on";
+  action?: HouseInteraction["action"];
+  restId?: HouseRestId;
+  activity?: WorldActivity["activity"];
+  prompt?: string;
+  response?: string;
+  sound?: "chest-open" | "door-open" | "map-open" | "tv-turn-on" | "ui-select";
 };
 
 export function PhaserGame({ character }: PhaserGameProps) {
@@ -75,6 +84,18 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private fireGlow?: import("phaser").GameObjects.Ellipse;
         private fireSprite?: import("phaser").GameObjects.Image;
         private fireTexture?: import("phaser").Textures.CanvasTexture;
+        private houseView?: HouseView;
+        private exteriorView?: ExteriorAtmosphereView;
+        // A scene restart through either door must never reset the world clock.
+        private worldTimeStartedAt = performance.now();
+        private rest = new HouseRestController();
+        private wakingUp = false;
+        private fishing = new FishingController();
+        private fishingView?: FishingView;
+        private fishingStartedAt = 0;
+        private observation?: { text: string; x: number; y: number; expires: number };
+        private restSprite?: import("phaser").GameObjects.Image;
+        private interactionGate = new InteractionPressGate();
         private lastFootstepAt = 0;
         private footstepVariation = 0;
         private zoomSteps = { house: 0, world: 0 };
@@ -84,8 +105,25 @@ export function PhaserGame({ character }: PhaserGameProps) {
           if (detail.active) this.mobileDirections.add(detail.direction);
           else this.mobileDirections.delete(detail.direction);
         };
-        private onMobileInteract = () => this.interact();
-        private onKeyboardInteract = () => this.interact();
+        private onMobileInteract = () => {
+          if (this.interactionGate.tap(this.time.now)) this.interact();
+        };
+        private onKeyboardInteract = (event: KeyboardEvent) => {
+          if (this.interactionGate.press(event.code, event.repeat, this.time.now)) this.interact();
+        };
+        private onKeyboardRelease = (event: KeyboardEvent) => this.interactionGate.release(event.code);
+        private onEscape = (event: KeyboardEvent) => {
+          if (!this.fishing.current || this.pausedByPanel || this.transitioning) return;
+          if (this.interactionGate.press(event.code, event.repeat, this.time.now)) this.stopFishing();
+        };
+        private onFishingCancel = () => {
+          if (!this.pausedByPanel && !this.transitioning && this.fishing.current) this.stopFishing();
+        };
+        private onInputBlur = () => {
+          this.interactionGate.reset();
+          this.mobileDirections.clear();
+          if (this.player?.active) this.player.setVelocity(0);
+        };
         private onPanelState = (event: Event) => {
           this.pausedByPanel = (event as CustomEvent<{ paused: boolean }>).detail.paused;
         };
@@ -103,14 +141,19 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.configureCamera(true);
         };
         private onGameResize = () => this.configureCamera();
+        private onZoomStateRequest = () => this.publishZoomState();
         private onPlayerPostUpdate = () => this.validatePlayerPosition();
 
         constructor() {
           super("portfolio-world");
         }
 
-        init(data: { area?: "house" | "world" }) {
+        init(data: { area?: "house" | "world" } = {}) {
           this.area = data.area ?? "house";
+          this.facing = "down";
+          // Only a newly mounted game has no destination. Door returns are awake.
+          this.wakingUp = data.area === undefined;
+          if (this.area === "world") this.zoomSteps.world = ZOOM_LIMITS.min;
           this.pausedByPanel = false;
           this.transitioning = false;
           this.nearest = null;
@@ -118,12 +161,23 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.lastFootstepAt = 0;
           this.footstepVariation = 0;
           this.houseFollowing = false;
+          this.rest.reset();
+          this.fishing.reset();
+          this.fishingView = undefined;
+          this.observation = undefined;
+          this.interactionGate.reset();
+          this.restSprite = undefined;
+          this.houseView = undefined;
+          this.exteriorView = undefined;
+          this.fireSprite = undefined;
+          this.fireGlow = undefined;
+          this.fireTexture = undefined;
         }
 
         preload() {
-          this.load.image("house", "/game/house-interior.png");
-          this.load.image("world", "/game/exterior-world.png");
-          this.load.image("exit-direction-sign", "/game/exit-direction-sign.png");
+          preloadHouse(this);
+          preloadExterior(this);
+          preloadCharacterMotion(this);
           this.load.image(
             "character-masculine-walksheet-source",
             "/game/character-masculine-walksheet.png",
@@ -195,10 +249,17 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.keys = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.keys;
           this.input.keyboard!.on("keydown-E", this.onKeyboardInteract);
           this.input.keyboard!.on("keydown-SPACE", this.onKeyboardInteract);
+          this.input.keyboard!.on("keyup-E", this.onKeyboardRelease);
+          this.input.keyboard!.on("keyup-SPACE", this.onKeyboardRelease);
+          this.input.keyboard!.on("keydown-ESC", this.onEscape);
+          this.input.keyboard!.on("keyup-ESC", this.onKeyboardRelease);
+          window.addEventListener("blur", this.onInputBlur);
           window.addEventListener("portfolio:mobile-direction", this.onMobileDirection);
           window.addEventListener("portfolio:mobile-interact", this.onMobileInteract);
           window.addEventListener("portfolio:panel-state", this.onPanelState);
           window.addEventListener("portfolio:zoom", this.onZoomRequest);
+          window.addEventListener("portfolio:zoom-state-request", this.onZoomStateRequest);
+          window.addEventListener("portfolio:fishing-cancel", this.onFishingCancel);
           this.scale.on(Phaser.Scale.Events.RESIZE, this.onGameResize);
           // O Arcade já reposicionou o sprite quando este evento é disparado.
           this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.onPlayerPostUpdate);
@@ -236,6 +297,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
               repeat: -1,
             });
           });
+          createDiagonalAnimations(this, character);
         }
 
         private animationKey(direction: Facing) {
@@ -247,6 +309,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         private idleFrame(direction: Facing) {
+          if (isDiagonalDirection(direction)) return getDiagonalFrame(character, direction, 0);
           const row = { down: 0, left: 1, right: 2, up: 3 }[direction];
           // A primeira coluna de cada direção é a pose neutra. Usá-la ao
           // parar evita que o personagem congele no meio de uma passada.
@@ -260,13 +323,14 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
         private stopWalkingAnimation() {
           this.player.anims.stop();
-          this.player.setFrame(this.idleFrame(this.facing));
+          this.player.setTexture(isDiagonalDirection(this.facing) ? CHARACTER_MOTION_TEXTURE : this.characterTextureKey(), this.idleFrame(this.facing));
         }
 
         private configureCamera(animated = false) {
           const camera = this.cameras.main;
           const multiplier = 1 + this.zoomSteps[this.area] * 0.2;
           camera.setBackgroundColor("#000000");
+          this.publishZoomState();
 
           if (this.area === "house") {
             camera.removeBounds();
@@ -313,18 +377,23 @@ export function PhaserGame({ character }: PhaserGameProps) {
           else camera.setZoom(zoom);
         }
 
+        private publishZoomState() {
+          window.dispatchEvent(new CustomEvent("portfolio:zoom-state", {
+            detail: { area: this.area, step: this.zoomSteps[this.area], ...ZOOM_LIMITS },
+          }));
+        }
+
         private buildArea() {
           const isHouse = this.area === "house";
           const { width: worldWidth, height: worldHeight } = SCENE_SIZE[this.area];
           this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
 
-          const background = this.add.image(worldWidth / 2, worldHeight / 2, isHouse ? "house" : "world");
-          background.setDisplaySize(worldWidth, worldHeight).setDepth(0);
-
-          if (isHouse) this.addHouseLightingEffects();
-          else {
-            this.addExitSign();
-            this.addWorldForegroundLayers();
+          if (isHouse) {
+            this.houseView = buildHouse(this);
+            this.addHouseLightingEffects();
+          } else {
+            this.exteriorView = buildExterior(this);
+            this.exteriorView.update(this.worldElapsedMs());
           }
 
           const spawn = SPAWN_POINTS[this.area];
@@ -350,22 +419,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.configureCamera();
 
           this.interactions = isHouse
-            ? [
-                { x: 615, y: 728, radius: 96, label: "Abrir guia do portfólio", panel: "intro", sound: "chest-open" },
-                { x: 170, y: 256, radius: 130, label: "Ligar TV", panel: "tv", sound: "tv-turn-on" },
-                { x: 740, y: 288, radius: 115, label: this.fireLit ? "Apagar lareira" : "Acender lareira", action: "toggle-fire" },
-                { x: 480, y: 893, radius: 52, label: "Sair da casa", destination: "world", sound: "door-open" },
-              ]
-            : [
-                { x: 625, y: 113, radius: 110, label: "Projetos", panel: "projects", sound: "chest-open" },
-                { x: 300, y: 407, radius: 155, label: "Habilidades", panel: "skills", sound: "chest-open" },
-                { x: 949, y: 418, radius: 155, label: "Experiências", panel: "experiences", sound: "chest-open" },
-                { x: 201, y: 880, radius: 90, label: "Certificações", panel: "certifications", sound: "chest-open" },
-                { x: 767, y: 405, radius: 75, label: "Mapa geral", panel: "map", sound: "map-open" },
-                { x: 692, y: 585, radius: 75, label: "Mapa dos baús", panel: "map", sound: "map-open" },
-                { x: 708, y: 966, radius: 90, label: "Ver caminho dos baús", panel: "map", sound: "map-open" },
-                { x: 625, y: 892, radius: 94, label: "Entrar na casa", destination: "house", sound: "door-open" },
-              ];
+            ? HOUSE_INTERACTIONS.map((interaction) => ({ ...interaction }))
+            : [...WORLD_INTERACTIONS, ...WORLD_ACTIVITIES];
 
           this.prompt = this.add
             .text(0, 0, "", {
@@ -389,18 +444,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
             // Deixa o telhado inteiro visível ao sair pela porta, mesmo com zoom.
             this.cameras.main.startFollow(this.player, true, 0.09, 0.09, 0, 100);
           } else {
-            this.addHouseCollisions();
-            this.add
-              .text(615, 637, "!", {
-                fontFamily: "Stardew Valley",
-                fontSize: "28px",
-                fontStyle: "bold",
-                color: "#ffe9a9",
-                stroke: "#5d2e1d",
-                strokeThickness: 5,
-              })
-              .setOrigin(0.5)
-              .setDepth(1200);
+            this.applyRoomLightStates();
+            if (this.wakingUp) this.enterRest("bed");
           }
         }
 
@@ -408,9 +453,9 @@ export function PhaserGame({ character }: PhaserGameProps) {
           // Nenhuma máscara é desenhada atrás do fogo: permanecem somente
           // a abertura original da lareira e as três chamas animadas.
           this.fireGlow = this.add
-            .ellipse(740, 278, 118, 72, 0xff8a24, 0.22)
+            .ellipse(HOUSE_LIGHTS.fire.x, HOUSE_LIGHTS.fire.y, 118, 72, 0xff8a24, 0.22)
             .setBlendMode(Phaser.BlendModes.ADD)
-            .setDepth(6);
+            .setDepth(353);
           this.createPixelFire();
 
           this.tweens.add({
@@ -492,14 +537,17 @@ export function PhaserGame({ character }: PhaserGameProps) {
           drawFlames();
           this.time.addEvent({ delay: 1000 / 7, loop: true, callback: drawFlames });
           this.fireSprite = this.add
-            .image(740, 290, textureKey)
+            .image(HOUSE_LIGHTS.fire.x, HOUSE_LIGHTS.fire.y, textureKey)
             .setDisplaySize(72, 42)
-            .setDepth(7);
+            .setDepth(354);
         }
 
         private applyRoomLightStates() {
           this.fireGlow?.setVisible(this.fireLit);
           this.fireSprite?.setVisible(this.fireLit);
+          for (const interaction of this.interactions) {
+            if (interaction.action === "toggle-fire") interaction.label = this.fireLit ? "Apagar lareira" : "Acender lareira";
+          }
         }
 
         private playFireToggleSound() {
@@ -526,102 +574,83 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
           this.applyRoomLightStates();
 
-          const interaction = this.interactions.find(
-            (item) => item.action === action,
-          );
-
-          if (!interaction) {
-            return;
-          }
-
-          if (action === "toggle-fire") {
-            interaction.label = this.fireLit
-              ? "Apagar lareira"
-              : "Acender lareira";
-          }
-
           this.updateInteraction();
         }
 
-        private addWorldForegroundLayers() {
-          const worldSource = this.textures
-            .get("world")
-            .getSourceImage() as CanvasImageSource;
-
-          WORLD_FOREGROUND_REGIONS.forEach((region) => {
-            // O primeiro plano recebe uma textura isolada a cada entrada no
-            // exterior. Assim, reiniciar a cena nunca reaproveita um frame
-            // recortado da visita anterior nem sobrepõe o mapa inteiro.
-            const textureKey = `foreground-${region.key}`;
-            if (this.textures.exists(textureKey)) {
-              this.textures.remove(textureKey);
-            }
-
-            const texture = this.textures.createCanvas(
-              textureKey,
-              region.width,
-              region.height,
-            );
-            if (!texture) return;
-
-            const context = texture.context;
-            context.imageSmoothingEnabled = false;
-            context.clearRect(0, 0, region.width, region.height);
-            context.save();
-            context.beginPath();
-            region.polygons.forEach((polygon) => {
-              const [first, ...remaining] = polygon;
-              context.moveTo(first[0], first[1]);
-              remaining.forEach(([x, y]) => context.lineTo(x, y));
-              context.closePath();
-            });
-            context.clip();
-            context.drawImage(
-              worldSource,
-              region.x,
-              region.y,
-              region.width,
-              region.height,
-              0,
-              0,
-              region.width,
-              region.height,
-            );
-            context.restore();
-            texture.refresh();
-
-            this.add
-              .image(
-                region.x,
-                region.y,
-                textureKey,
-              )
-              .setOrigin(0)
-              .setDepth(region.baseline);
-          });
+        private enterRest(restId: HouseRestId) {
+          const spot = this.rest.enter(restId, this.lastWalkablePosition);
+          if (!spot) return;
+          this.stopWalking();
+          const body = this.player.body as import("phaser").Physics.Arcade.Body;
+          body.reset(spot.x, spot.y);
+          body.enable = false;
+          this.player.setVisible(false);
+          this.restSprite = this.add.image(spot.x, spot.y, "house-poses", getRestPoseFrame(character, spot.kind))
+            .setDisplaySize(spot.width, spot.height).setDepth(spot.depth).setFlipX(spot.facing === "left");
+          this.houseView?.bedCover.setVisible(spot.kind === "lie");
+          this.updateInteraction();
         }
 
-        private addExitSign() {
-          // Sprite dedicado com transparência real: evita carregar junto o
-          // retângulo de grama que existia no recorte da textura do mapa.
-          this.add
-            .image(708, 1002, "exit-direction-sign")
-            .setOrigin(0.5, 1)
-            .setDisplaySize(58, 82)
-            .setFlipX(true)
-            .setDepth(1002);
+        private leaveRest() {
+          const exit = this.rest.leave();
+          if (!exit) return;
+          this.wakingUp = false;
+          this.restSprite?.destroy();
+          this.restSprite = undefined;
+          this.houseView?.bedCover.setVisible(false);
+          this.facing = "down";
+          const body = this.player.body as import("phaser").Physics.Arcade.Body;
+          body.reset(exit.x, exit.y);
+          body.enable = true;
+          this.player.setVisible(true).setDepth(exit.y + PLAYER_SIZE.house * 0.43);
+          this.stopWalking();
+          this.lastWalkablePosition = { ...exit };
+          this.mobileDirections.clear();
+          this.updateInteraction();
         }
 
-        private addHouseCollisions() {
-          this.addCollisionBoxes(HOUSE_COLLISIONS);
+        private startFishing() {
+          if (this.area !== "world") return;
+          const spot = this.fishing.begin(this.lastWalkablePosition);
+          if (!spot) return;
+          this.observation = undefined;
+          this.facing = spot.facing;
+          this.stopWalking();
+          const body = this.player.body as import("phaser").Physics.Arcade.Body;
+          body.reset(spot.position.x, spot.position.y);
+          body.enable = false;
+          this.player.setDepth(spot.position.y + PLAYER_SIZE.world * 0.43);
+          this.fishingStartedAt = this.time.now;
+          this.fishingView = createFishingView(this, spot);
+          this.player.setTexture(CHARACTER_MOTION_TEXTURE, getFishingPoseFrame(character, "cast-0"));
+          window.dispatchEvent(new CustomEvent("portfolio:fishing-state", { detail: { active: true } }));
+          this.updateInteraction();
         }
 
-        private addCollisionBoxes(blockers: CollisionBox[]) {
-          blockers.forEach((blocker) => {
-            const zone = this.add.zone(blocker.x, blocker.y, blocker.width, blocker.height);
-            this.physics.add.existing(zone, true);
-            this.physics.add.collider(this.player, zone);
-          });
+        private stopFishing() {
+          const exit = this.fishing.leave();
+          if (!exit) return;
+          this.fishingView?.destroy();
+          this.fishingView = undefined;
+          window.dispatchEvent(new CustomEvent("portfolio:fishing-state", { detail: { active: false } }));
+          const body = this.player.body as import("phaser").Physics.Arcade.Body;
+          body.reset(exit.x, exit.y);
+          body.enable = true;
+          this.facing = "down";
+          this.stopWalking();
+          this.player.setDepth(exit.y + PLAYER_SIZE.world * 0.43);
+          this.lastWalkablePosition = { ...exit };
+          this.mobileDirections.clear();
+          this.updateInteraction();
+        }
+
+        private observeWorld(interaction: Interaction) {
+          if (!interaction.response) return;
+          this.observation = {
+            text: interaction.response, x: interaction.x, y: interaction.y,
+            expires: this.time.now + 3600,
+          };
+          this.updateInteraction();
         }
 
         private canOccupy(position: Position) {
@@ -629,22 +658,15 @@ export function PhaserGame({ character }: PhaserGameProps) {
             return canOccupyWorld(position);
           }
 
-          const foot = getFootBounds(position, PLAYER_SIZE[this.area]);
-          const { width, height } = SCENE_SIZE[this.area];
-          if (foot.left < 0 || foot.right > width || foot.top < 0 || foot.bottom > height) {
-            return false;
-          }
-
-          if (HOUSE_COLLISIONS.some((box) => footHitsBox(foot, box))) return false;
-          return footFitsFloor(foot, HOUSE_FLOOR_AREAS);
+          return canOccupyHouse(position);
         }
 
         private validatePlayerPosition() {
           if (!this.player?.active) return;
+          if (this.rest.current || this.fishing.current) return;
 
-          // No quarto, o Arcade já resolveu os objetos. No exterior, a mesma
-          // regra dos pés trata caminhos e obstáculos. Verificamos o percurso
-          // em passos curtos para não atravessar bordas em frames lentos.
+          // Both areas validate the complete foot path in short steps, including
+          // furniture and tile boundaries, so slow frames cannot tunnel through.
           const previous = this.lastWalkablePosition;
           const current = { x: this.player.x, y: this.player.y };
           const accepted = moveAlongWalkablePath(previous, current, (position) => this.canOccupy(position));
@@ -694,7 +716,29 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         update() {
+          this.exteriorView?.update(this.worldElapsedMs());
           if (!this.player) return;
+          if (this.fishing.current) {
+            this.player.setVelocity(0);
+            const elapsed = this.time.now - this.fishingStartedAt;
+            const outcome = this.fishing.tick(elapsed);
+            this.fishingView?.update(elapsed);
+            const motion = getFishingAnimation(this.fishing.current, elapsed);
+            const pose = motion.characterPose === "cast"
+              ? motion.poseProgress < 0.45 ? "cast-0" : "cast-1"
+              : motion.characterPose === "reel" ? "reel" : "hold";
+            this.player.setTexture(CHARACTER_MOTION_TEXTURE, getFishingPoseFrame(character, pose));
+            if (outcome.caught) {
+              const unlocked = usePortfolioStore.getState().recordFishCatch();
+              if (unlocked) window.dispatchEvent(new Event("portfolio:fishing-achievement"));
+            }
+            this.updateInteraction();
+            return;
+          }
+          if (this.rest.current) {
+            this.player.setVelocity(0);
+            return;
+          }
           if (this.pausedByPanel) {
             this.stopWalking();
             return;
@@ -710,9 +754,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.player.setVelocity(direction.x, direction.y);
 
           if (direction.lengthSq() > 0) {
-            const nextFacing: Facing = Math.abs(direction.x) > Math.abs(direction.y)
-              ? direction.x < 0 ? "left" : "right"
-              : direction.y < 0 ? "up" : "down";
+            const nextFacing = getMovementFacing(direction.x, direction.y, this.facing);
             this.facing = nextFacing;
             const animation = this.animationKey(nextFacing);
             if (this.player.anims.currentAnim?.key !== animation || !this.player.anims.isPlaying) {
@@ -724,6 +766,30 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         private updateInteraction() {
+          const fishing = this.fishing.current;
+          if (fishing) {
+            const messages = {
+              cast: "Lançando a linha…\n[Esc] Cancelar",
+              waiting: "Aguardando uma fisgada…\n[Esc] Cancelar",
+              bite: "Fisgou!\n[Esc] Cancelar",
+              reel: "Recolhendo o peixe…\n[Esc] Cancelar",
+              caught: "Peixe capturado!",
+              ready: "[E] Pescar novamente\n[Esc] Encerrar",
+            };
+            this.prompt.setText(messages[this.fishing.phase])
+              .setWordWrapWidth(280)
+              .setPosition(fishing.position.x, fishing.position.y - 70).setVisible(true);
+            return;
+          }
+          const resting = this.rest.current;
+          if (resting) {
+            this.prompt.setText(this.wakingUp
+              ? "Um novo dia começa neste mundo. Pressione E para levantar."
+              : "[E] Levantar")
+              .setWordWrapWidth(this.wakingUp ? 330 : 400)
+              .setPosition(this.wakingUp ? resting.x - 72 : resting.x, resting.y - resting.height / 2 - 12).setVisible(true);
+            return;
+          }
           let nearest: Interaction | null = null;
           let nearestDistance = Number.POSITIVE_INFINITY;
           for (const interaction of this.interactions) {
@@ -734,13 +800,23 @@ export function PhaserGame({ character }: PhaserGameProps) {
             }
           }
           this.nearest = nearest;
+          if (this.observation) {
+            const { x, y, text, expires } = this.observation;
+            if (this.time.now < expires && Math.hypot(this.player.x - x, this.player.y - y) < 110) {
+              this.prompt.setText(text).setWordWrapWidth(280)
+                .setPosition(x, y - 40).setVisible(true);
+              return;
+            }
+            this.observation = undefined;
+          }
           if (!nearest) {
             this.prompt.setVisible(false);
             return;
           }
           this.prompt
-            .setText(`${nearest.label}\n[E] Interagir`)
-            .setPosition(nearest.x, nearest.y - 36)
+            .setText(nearest.prompt ?? `${nearest.label}\n[E] Interagir`)
+            .setWordWrapWidth(330)
+            .setPosition(nearest.x, this.area === "house" && nearest.panel === "intro" ? HOUSE_MARKER.y - 30 : nearest.y - 36)
             .setVisible(true);
         }
 
@@ -769,11 +845,36 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         private interact() {
-          if (this.pausedByPanel || !this.nearest) {
+          if (this.pausedByPanel || this.transitioning) {
+            return;
+          }
+          if (this.rest.current) {
+            this.leaveRest();
+            return;
+          }
+          if (this.fishing.current) {
+            if (this.fishing.retry()) {
+              this.fishingStartedAt = this.time.now;
+              this.fishingView?.update(0);
+              this.player.setTexture(CHARACTER_MOTION_TEXTURE, getFishingPoseFrame(character, "cast-0"));
+              this.updateInteraction();
+            }
+            return;
+          }
+          if (!this.nearest) return;
+
+          this.playInteractionSound(this.nearest);
+
+          if (this.nearest.activity) {
+            if (this.nearest.activity === "fish") this.startFishing();
+            else this.observeWorld(this.nearest);
             return;
           }
 
-          this.playInteractionSound(this.nearest);
+          if (this.nearest.restId) {
+            this.enterRest(this.nearest.restId);
+            return;
+          }
 
           if (this.nearest.action) {
             this.toggleRoomObject(this.nearest.action);
@@ -809,12 +910,29 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private cleanupListeners() {
           this.input.keyboard?.off("keydown-E", this.onKeyboardInteract);
           this.input.keyboard?.off("keydown-SPACE", this.onKeyboardInteract);
+          this.input.keyboard?.off("keyup-E", this.onKeyboardRelease);
+          this.input.keyboard?.off("keyup-SPACE", this.onKeyboardRelease);
+          this.input.keyboard?.off("keydown-ESC", this.onEscape);
+          this.input.keyboard?.off("keyup-ESC", this.onKeyboardRelease);
+          window.removeEventListener("blur", this.onInputBlur);
+          this.rest.reset();
+          this.fishingView?.destroy();
+          this.exteriorView?.destroy();
+          this.fishing.reset();
+          window.dispatchEvent(new CustomEvent("portfolio:fishing-state", { detail: { active: false } }));
+          this.interactionGate.reset();
           window.removeEventListener("portfolio:mobile-direction", this.onMobileDirection);
           window.removeEventListener("portfolio:mobile-interact", this.onMobileInteract);
           window.removeEventListener("portfolio:panel-state", this.onPanelState);
           window.removeEventListener("portfolio:zoom", this.onZoomRequest);
+          window.removeEventListener("portfolio:zoom-state-request", this.onZoomStateRequest);
+          window.removeEventListener("portfolio:fishing-cancel", this.onFishingCancel);
           this.scale.off(Phaser.Scale.Events.RESIZE, this.onGameResize);
           this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.onPlayerPostUpdate);
+        }
+
+        private worldElapsedMs() {
+          return Math.max(0, performance.now() - this.worldTimeStartedAt);
         }
       }
 
