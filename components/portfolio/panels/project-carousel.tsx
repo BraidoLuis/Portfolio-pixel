@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Project } from "@/content/projects";
 import { pixelButtonClass } from "@/lib/ui-styles";
+import { PanelFrame, PanelKicker } from "./panel-frame";
+import { getProjectLinks } from "./project-links";
 
 export function ProjectCarousel({ projects }: { projects: Project[] }) {
   const [page, setPage] = useState(0);
@@ -28,15 +30,11 @@ export function ProjectCarousel({ projects }: { projects: Project[] }) {
   );
 
   return (
-    <div className="relative px-4 pb-4 pt-6">
-      <DialogHeader>
-        <p className="mx-auto mb-4 mt-[-2.45rem] w-max border-4 border-[#52291d] bg-[#f1bd69] px-4 py-2 font-black text-[#6e361f] shadow-[inset_0_0_0_2px_#ffe1a0,0_4px_0_#31170f]">
-          Escolha uma missão
-        </p>
-        <DialogTitle className="sr-only">Projetos disponíveis</DialogTitle>
-        <DialogDescription className="sr-only">
-          Navegue pelos projetos e abra o ambiente publicado.
-        </DialogDescription>
+    <PanelFrame>
+      <DialogHeader className="mb-6 pr-8 text-left">
+        <PanelKicker className="max-[720px]:pl-6">Baú de projetos</PanelKicker>
+        <DialogTitle>Projetos</DialogTitle>
+        <DialogDescription>Escolha uma missão e conheça o trabalho.</DialogDescription>
       </DialogHeader>
 
       {projects.length === 0 ? (
@@ -68,14 +66,15 @@ export function ProjectCarousel({ projects }: { projects: Project[] }) {
           </PaginationButton>
         </div>
       )}
-    </div>
+    </PanelFrame>
   );
 }
 
 function ProjectCard({ project }: { project: Project }) {
+  const links = getProjectLinks(project);
   return (
     <motion.article
-      className="flex min-h-[430px] flex-col justify-between gap-4 border-[3px] border-[#75432a] bg-[linear-gradient(100deg,rgba(150,98,54,.12),transparent_14%),#f6d99c] p-5 text-[#4b2b22] shadow-[inset_0_0_0_4px_#ffedbd,5px_6px_0_rgba(47,23,14,.3)] max-[720px]:min-h-[390px]"
+      className="flex flex-col gap-4 border-[3px] border-[#75432a] bg-[linear-gradient(100deg,rgba(150,98,54,.12),transparent_14%),#f6d99c] p-4 text-[#4b2b22] shadow-[inset_0_0_0_4px_#ffedbd,5px_6px_0_rgba(47,23,14,.3)] sm:p-5"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
     >
@@ -101,21 +100,15 @@ function ProjectCard({ project }: { project: Project }) {
         </div>
       </div>
 
-      {project.live_url || project.repository_url ? (
-        <div className="grid grid-cols-2 gap-2.5 max-[720px]:grid-cols-1">
-          {project.live_url && (
-            <a className={`${pixelButtonClass} min-w-0 px-2.5 text-[.82rem]`} href={project.live_url} target="_blank" rel="noreferrer">
-              Ambiente publicado <ExternalLink aria-hidden="true" />
+      {links.length > 0 && (
+        <div className={`mt-auto grid gap-2.5 ${links.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+          {links.map((link) => (
+            <a key={link.label} className={`${pixelButtonClass} min-w-0 flex-wrap px-2 text-center text-[.75rem] leading-tight sm:text-[.82rem]`}
+              href={link.href} target="_blank" rel="noreferrer">
+              {link.label} {link.kind === "live" ? <ExternalLink aria-hidden="true" /> : <Code2 aria-hidden="true" />}
             </a>
-          )}
-          {project.repository_url && (
-            <a className={`${pixelButtonClass} min-w-0 px-2.5 text-[.82rem]`} href={project.repository_url} target="_blank" rel="noreferrer">
-              Repositório <Code2 aria-hidden="true" />
-            </a>
-          )}
+          ))}
         </div>
-      ) : (
-        <span className={`${pixelButtonClass} cursor-not-allowed opacity-60`}>Projeto privado</span>
       )}
     </motion.article>
   );

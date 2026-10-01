@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 export type Character = "masculine" | "feminine";
+export const FISHING_MILESTONES = [3, 10, 20, 50] as const;
 export type PanelType =
   | "intro"
   | "tv"
@@ -24,6 +25,9 @@ type PortfolioStore = {
   soundEnabled: boolean;
   volume: number;
   discovered: string[];
+  fishCaught: number;
+  fishingAchievement: boolean;
+  recordFishCatch: () => boolean;
   setCharacter: (character: Character) => void;
   startGame: () => void;
   returnToMenu: () => void;
@@ -42,6 +46,19 @@ export const usePortfolioStore = create<PortfolioStore>()(
       soundEnabled: true,
       volume: 0.35,
       discovered: [],
+      fishCaught: 0,
+      fishingAchievement: false,
+      recordFishCatch: () => {
+        let unlocked = false;
+        set((state) => {
+          const fishCaught = state.fishCaught + 1;
+          // The persisted count is the source of truth for every milestone.
+          // Existing saves therefore retain their 3-fish star and progress.
+          unlocked = FISHING_MILESTONES.some((milestone) => fishCaught === milestone);
+          return { fishCaught, fishingAchievement: state.fishingAchievement || fishCaught >= 3 };
+        });
+        return unlocked;
+      },
       setCharacter: (character) => set({ character }),
       startGame: () => set({ started: true, activePanel: null }),
       returnToMenu: () => set({ started: false, activePanel: null }),
@@ -64,6 +81,8 @@ export const usePortfolioStore = create<PortfolioStore>()(
         soundEnabled: state.soundEnabled,
         volume: state.volume,
         discovered: state.discovered,
+        fishCaught: state.fishCaught,
+        fishingAchievement: state.fishingAchievement,
       }),
     },
   ),
