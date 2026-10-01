@@ -113,6 +113,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
         };
         private onKeyboardRelease = (event: KeyboardEvent) => this.interactionGate.release(event.code);
         private onEscape = (event: KeyboardEvent) => {
+          // The browser owns Esc while the game element is fullscreen.
+          if (typeof document !== "undefined" && document.fullscreenElement) return;
           if (!this.fishing.current || this.pausedByPanel || this.transitioning) return;
           if (this.interactionGate.press(event.code, event.repeat, this.time.now)) this.stopFishing();
         };
@@ -730,7 +732,9 @@ export function PhaserGame({ character }: PhaserGameProps) {
             this.player.setTexture(CHARACTER_MOTION_TEXTURE, getFishingPoseFrame(character, pose));
             if (outcome.caught) {
               const unlocked = usePortfolioStore.getState().recordFishCatch();
-              if (unlocked) window.dispatchEvent(new Event("portfolio:fishing-achievement"));
+              if (unlocked) window.dispatchEvent(new CustomEvent("portfolio:fishing-achievement", {
+                detail: { fishCaught: usePortfolioStore.getState().fishCaught },
+              }));
             }
             this.updateInteraction();
             return;

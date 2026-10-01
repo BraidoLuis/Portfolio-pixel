@@ -5,7 +5,7 @@ const { getWorldLighting, WORLD_DAY_DURATION_MS } = loadTypeScript("components/p
 const { EXTERIOR_OBJECTS, EXTERIOR_TILES, WORLD_INTERACTIONS } = loadTypeScript("components/portfolio/game/exterior-map.ts");
 const { canOccupyWorld } = loadTypeScript("components/portfolio/game/world-walkability.ts");
 const { getFootBounds, footHitsBox } = loadTypeScript("components/portfolio/game/collision-geometry.ts");
-const { getCloudPosition, PROJECTS_GOLD } = loadTypeScript("components/portfolio/game/exterior-decor.ts");
+const { getCloudPosition, PROJECTS_GOLD, LANTERN_GLOW } = loadTypeScript("components/portfolio/game/exterior-decor.ts");
 const { createExteriorAtmosphere } = loadTypeScript("components/portfolio/game/exterior-atmosphere.ts");
 
 assert.equal(WORLD_DAY_DURATION_MS, 240_000);
@@ -34,8 +34,12 @@ for (let y = 148; y <= 280; y += 4) for (let x = 600; x <= 660; x += 4) {
   assert(canOccupyWorld({ x, y }), `Chest approach blocked at ${x},${y}`);
 }
 assert(PROJECTS_GOLD.every((piece) => piece.x + piece.width <= 600 || piece.x >= 680 || piece.y + piece.height < 140), "Coins leave the approach visually clear");
-const posts = EXTERIOR_OBJECTS.filter((object) => object.id.startsWith("path-lantern-"));
-assert.equal(posts.length, 5);
+const posts = EXTERIOR_OBJECTS.filter((object) => object.id.startsWith("path-lantern-") || object.id.startsWith("chest-lantern-"));
+assert.equal(posts.length, 13);
+const terracePosts = posts.filter((object) => object.id.startsWith("chest-lantern-") && object.y === 224);
+assert.deepEqual(terracePosts.map(({ x }) => x), [528, 752]);
+assert(LANTERN_GLOW.some((pixel) => pixel.x <= -144 && pixel.alpha > 0));
+assert(LANTERN_GLOW.some((pixel) => pixel.alpha >= 0.6));
 for (const post of posts) {
   assert.equal(post.collision.width, 16); assert.equal(post.collision.height, 16);
   for (const dx of [-8, 7]) for (const dy of [-16, -1]) assert.equal(EXTERIOR_TILES[Math.floor((post.y + dy) / 32)][Math.floor((post.x + dx) / 32)], "grass");
@@ -67,4 +71,4 @@ assert(nodes.filter((item) => item.name.endsWith("-glow")).every((item) => item.
 view.update(24_000);
 assert(nodes.filter((item) => item.name.endsWith("-glow")).every((item) => item.alpha === 0));
 shutdown(); assert(nodes.every((item) => item.destroyed)); view.update(168_000); view.destroy();
-console.log("World life passed: 4-minute continuous lighting, gradual lamp transitions, 5 grass-only post bases, 96px Projects chest with clear approach, clouds and effect cleanup.");
+console.log("World life passed: 4-minute continuous lighting, gradual lamp transitions, 13 grass-only post bases, 96px Projects chest with clear approach, clouds and effect cleanup.");

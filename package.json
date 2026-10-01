@@ -18,8 +18,9 @@
     "check:house": "node scripts/check-house.mjs && node scripts/check-house-scene.mjs && node scripts/check-fishing-achievement.mjs",
     "preview:house": "node scripts/render-interior-preview.mjs",
     "preview:world": "node scripts/render-exterior-preview.mjs && node scripts/render-activities-preview.mjs && node scripts/render-world-life-preview.mjs",
-    "assets:character-motion": "node scripts/build-character-motion.mjs",
-    "check:character-motion": "node scripts/check-character-motion.mjs",
+    "assets:character-motion": "node scripts/clean-character-walksheets.mjs && node scripts/extract-character-motion-alpha.mjs && node scripts/build-character-motion.mjs",
+    "check:character-motion": "node scripts/check-character-motion.mjs && node scripts/check-character-alpha.mjs",
+    "check:project-links": "node scripts/check-project-links.mjs",
     "preview:character-motion": "node scripts/render-character-motion-preview.mjs"
   },
   "dependencies": {

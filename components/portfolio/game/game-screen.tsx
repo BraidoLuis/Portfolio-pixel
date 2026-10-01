@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, House, Map } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, House, Map, Maximize2, Minimize2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { PhaserGame } from "@/components/portfolio/game/phaser-game";
 import { ZOOM_LIMITS, type ZoomState } from "@/components/portfolio/game/game-zoom";
 import { FishingHud } from "./fishing-hud";
@@ -11,12 +11,58 @@ import { usePortfolioStore, type PanelType } from "@/components/portfolio/store/
 import type { Project } from "@/content/projects";
 
 export function GameScreen({ projects }: { projects: Project[] }) {
+  const gameRef = useRef<HTMLElement | null>(null);
   const character = usePortfolioStore((state) => state.character);
   const returnToMenu = usePortfolioStore((state) => state.returnToMenu);
   const openPanel = usePortfolioStore((state) => state.openPanel);
   const [zoom, setZoom] = useState<ZoomState>({ area: "house", step: 0, ...ZOOM_LIMITS });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenContainer, setFullscreenContainer] = useState<HTMLElement | null>(null);
+  const [fullscreenNotice, setFullscreenNotice] = useState<string | null>(null);
   const zoomPercent = Math.round((1 + zoom.step * 0.2) * 100);
   const zoomArea = zoom.area === "house" ? "Quarto" : "Exterior";
+
+  useEffect(() => {
+    const syncFullscreen = () => {
+      const active = document.fullscreenElement === gameRef.current;
+      setIsFullscreen(active);
+      setFullscreenContainer(active ? gameRef.current : null);
+    };
+    const showFullscreenError = () => setFullscreenNotice("Tela cheia indisponível neste navegador.");
+    const exitOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && document.fullscreenElement === gameRef.current) {
+        void document.exitFullscreen().catch(showFullscreenError);
+      }
+    };
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    document.addEventListener("fullscreenerror", showFullscreenError);
+    document.addEventListener("keydown", exitOnEscape, true);
+    return () => {
+      document.removeEventListener("fullscreenchange", syncFullscreen);
+      document.removeEventListener("fullscreenerror", showFullscreenError);
+      document.removeEventListener("keydown", exitOnEscape, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!fullscreenNotice) return;
+    const timeout = window.setTimeout(() => setFullscreenNotice(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [fullscreenNotice]);
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === gameRef.current) {
+        await document.exitFullscreen();
+      } else if (gameRef.current?.requestFullscreen && document.fullscreenEnabled) {
+        await gameRef.current.requestFullscreen();
+      } else {
+        setFullscreenNotice("Tela cheia indisponível neste navegador.");
+      }
+    } catch {
+      setFullscreenNotice("Tela cheia indisponível neste navegador.");
+    }
+  }
 
   useEffect(() => {
     const handleZoomState = (event: Event) => {
@@ -38,7 +84,8 @@ export function GameScreen({ projects }: { projects: Project[] }) {
 
   return (
     <motion.section
-      className="relative h-svh w-screen overflow-hidden bg-black"
+      ref={gameRef}
+      className={`relative overflow-hidden bg-black ${isFullscreen ? "h-dvh w-dvw" : "h-svh w-screen"}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -53,7 +100,19 @@ export function GameScreen({ projects }: { projects: Project[] }) {
         <button className={toolbarButtonClass} type="button" onClick={() => openPanel("map")}>
           <Map aria-hidden="true" /> Mapa
         </button>
+        <button className={toolbarButtonClass} type="button" onClick={toggleFullscreen}
+          aria-label={isFullscreen ? "Sair da tela cheia" : "Tela cheia"} aria-pressed={isFullscreen}
+          title={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}>
+          {isFullscreen ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+          {isFullscreen ? "Sair" : "Tela cheia"}
+        </button>
       </div>
+
+      {fullscreenNotice && (
+        <div role="status" className="pointer-events-none absolute left-1/2 top-4 z-30 max-w-[70vw] -translate-x-1/2 border-2 border-[#d58a48] bg-[#352218]/95 px-3 py-2 text-center text-sm text-[#fff0bd]">
+          {fullscreenNotice}
+        </div>
+      )}
 
       <div className="absolute right-4 top-[4.5rem] z-20 flex gap-2 max-[720px]:top-4" role="group" aria-label="Zoom do jogo">
         <button
@@ -87,7 +146,7 @@ export function GameScreen({ projects }: { projects: Project[] }) {
         </button>
       </div>
 
-      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-20 hidden grid-cols-[54px] justify-items-center gap-[3px] max-[720px]:grid" aria-label="Controles do personagem">
+      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-20 hidden grid-cols-[162px] justify-items-center gap-[3px] max-[720px]:grid" aria-label="Controles do personagem">
         <DirectionButton direction="up" label="Mover para cima"><ArrowUp /></DirectionButton>
         <div className="flex items-center gap-[3px]">
           <DirectionButton direction="left" label="Mover para esquerda"><ArrowLeft /></DirectionButton>
@@ -104,7 +163,7 @@ export function GameScreen({ projects }: { projects: Project[] }) {
         <DirectionButton direction="down" label="Mover para baixo"><ArrowDown /></DirectionButton>
       </div>
 
-      <ContentDialog projects={projects} />
+      <ContentDialog projects={projects} portalContainer={fullscreenContainer} />
     </motion.section>
   );
 }

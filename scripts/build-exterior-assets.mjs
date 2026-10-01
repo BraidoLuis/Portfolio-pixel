@@ -10,6 +10,7 @@ const {
   EXTERIOR_GROUND_VARIANTS: groundVariants,
   EXTERIOR_WATER_FRAME: waterFrame,
   EXTERIOR_CLIFF_FRAME: cliffFrame,
+  EXTERIOR_CLIFF_FRAME_COUNT: cliffFrameCount,
   EXTERIOR_STAIRS_FRAME: stairsFrame,
   EXTERIOR_TERRAIN_FRAME_COUNT: frameCount,
 } = loadTypeScript("components/portfolio/game/exterior-art.ts");
@@ -129,8 +130,19 @@ for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     const stone = ((x * 3 + y * 5) % 11) < 4 ? [169, 164, 115, 255] : [114, 118, 85, 255];
     put(waterFrame + variant * 16 + mask, x, y, edge < 1 ? sample(0, x, y, variant) : edge < 3 ? stone : edge < 4 ? [45, 115, 124, 255] : sample(2, x, y, variant));
   }
-  for (let variant = 0; variant < 4; variant++) {
-    put(cliffFrame + variant, x, y, y < 2 ? sample(0, x, y, variant) : y === 2 ? [72, 77, 27, 255] : sample(3, x, y, variant));
+  for (let mask = 0; mask < cliffFrameCount; mask++) {
+    const side = ((mask & 1) && x < 2) || ((mask & 2) && x > 13);
+    const top = 2 + ((x * 5 + mask * 3) % 11 === 0 ? 1 : 0);
+    const seam = (x === (5 + (mask & 3) * 2) && y >= 6 && y <= 11) ||
+      (x === (11 - (mask & 3)) && y >= 11);
+    const stone = sample(3, x, y, mask % 4);
+    const color = y < top ? sample(0, x, y, mask % 4)
+      : y === top ? [68, 79, 33, 255]
+      : side ? y < 7 ? sample(0, x, y, mask % 4) : [75, 70, 42, 255]
+      : y === 15 ? [65, 55, 34, 255]
+      : seam ? [73, 64, 40, 255]
+      : (x + y * 3 + mask) % 17 === 0 ? [176, 142, 83, 255] : stone;
+    put(cliffFrame + mask, x, y, color);
   }
   for (let variant = 0; variant < 16; variant++) {
     const step = y % 4;
@@ -138,9 +150,17 @@ for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
     // and last treads pick up a few weathered dirt pixels from the approaches.
     const edge = ((variant & 1) && x === 0) || ((variant & 2) && x === 15);
     const landing = ((variant & 4) && y < 2) || ((variant & 8) && y > 13);
-    const worn = ((x * 7 + y * 3) % 13) < 6;
-    const colors = [[211, 174, 92, 255], [171, 128, 66, 255], [137, 94, 47, 255], [76, 51, 30, 255]];
-    put(stairsFrame + variant, x, y, edge ? [98, 71, 38, 255] : landing && worn ? sample(1, x, y, variant % 8) : x % 9 === 0 && step < 2 ? [179, 144, 75, 255] : colors[step]);
+    const worn = ((x * 7 + y * 3 + variant * 5) % 17) < 4;
+    const colors = [[225, 189, 109, 255], [177, 130, 70, 255], [143, 98, 53, 255], [73, 51, 34, 255]];
+    const rail = edge && (x < 2 || x > 13);
+    const railPost = rail && (y === 1 || y === 9);
+    const color = railPost ? [198, 155, 76, 255]
+      : rail ? [93, 64, 39, 255]
+      : landing && worn ? sample(1, x, y, variant % 8)
+      : step === 1 && worn ? [196, 154, 83, 255]
+      : step === 2 && (x + variant) % 7 === 0 ? [109, 72, 42, 255]
+      : colors[step];
+    put(stairsFrame + variant, x, y, color);
   }
 }
 await sharp(pixels, { raw: { width: atlasWidth, height: atlasHeight, channels: 4 } })

@@ -1,6 +1,6 @@
 # Personagens: diagonais e pesca
 
-Recursos novos; as duas folhas de caminhada originais e as poses do quarto foram preservadas. Gerados com a ferramenta integrada `image_gen`, sem CLI ou API externa. Cada direção diagonal usa um desenho em três quartos; as direções à esquerda são espelhamentos horizontais dos desenhos à direita, sem girar sprites cardinais.
+Recursos novos; as poses do quarto foram preservadas. As folhas cardinais originais agora ficam guardadas como `masculine-walksheet-source.png` e `feminine-walksheet-source.png`; as cópias usadas pelo jogo tiveram apenas a franja clara da transparência removida. As diagonais foram geradas com a ferramenta integrada `image_gen`, sem CLI ou API externa. Cada direção diagonal usa um desenho em três quartos; as direções à esquerda são espelhamentos horizontais dos desenhos à direita, sem girar sprites cardinais.
 
 - `masculine-source.png` e `feminine-source.png`: fontes transparentes, 4 colunas por 3 linhas. A resposta feminina trouxe xadrez opaco; `feminine-generated-opaque.png` preserva a resposta original. `scripts/extract-character-motion-alpha.mjs` remove somente as áreas neutras conectadas às bordas e produz a fonte transparente usada pelo atlas.
 - Linha 1: nordeste, quatro quadros. Linha 2: sudeste, quatro quadros.
@@ -11,14 +11,14 @@ Recursos novos; as duas folhas de caminhada originais e as poses do quarto foram
 Compilação e verificação:
 
 ```sh
-node scripts/build-character-motion.mjs
-node scripts/check-character-motion.mjs
+npm run assets:character-motion
+npm run check:character-motion
 node scripts/render-character-motion-preview.mjs
 ```
 
 Se a fonte feminina precisar ser recompilada a partir da resposta original, execute `node scripts/extract-character-motion-alpha.mjs` antes do compilador. A remoção de fundo foi tentada três vezes com `image_gen`, mas as respostas mantiveram o xadrez pintado; o filtro determinístico é verificado pelo teste de alfa e pela prévia.
 
-O compilador recorta cada célula por alpha, normaliza o corpo à mesma altura e linha dos pés, usa nearest-neighbor e alpha binário. Não cria quadros por rotação. O teste confere as quatro direções dos dois personagens, quadros distintos, transparência, dimensão e alinhamento dos pés. A velocidade, colisões e acionamento das animações são testados na cena separadamente.
+O compilador recorta cada célula por alpha, normaliza o corpo à mesma altura e linha dos pés, usa nearest-neighbor e alpha binário. `character-alpha.mjs` remove apenas pixels claros quase neutros em contato com o exterior transparente, preservando olhos, pele e detalhes internos. Não cria quadros por rotação. Os testes conferem as quatro direções dos dois personagens, quadros distintos, transparência, dimensão, alinhamento dos pés e a ausência de pontos brancos no contorno.
 
 ## Prompts usados
 

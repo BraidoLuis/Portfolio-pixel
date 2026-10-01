@@ -1,5 +1,7 @@
 # Baú de Projetos, pesca, diagonais e ciclo do exterior
 
+Este relatório registra a etapa anterior. Os valores atuais de postes, conquistas e testes no navegador estão em [Polimento do mapa e da interface](POLIMENTO-MAPA-E-INTERFACE.md).
+
 Implementado sobre a branch `feat/exterior-tile-rebuild`, sem commit nem push.
 O quarto, as posições de tiles caminháveis, os atlas anteriores e
 `estado-atual-mapa.patch` foram preservados. Dezesseis arquivos monitorados

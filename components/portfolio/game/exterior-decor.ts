@@ -54,10 +54,10 @@ export const CLOUD_PIXELS = piece(cloudRows, { a: 0xa5bac2, b: 0xd1dcdc, c: 0xf5
 /** Digital radial glow. Static per-pixel alpha avoids animated vector gradients. */
 export const LANTERN_GLOW: readonly PixelRect[] = (() => {
   const pixels: PixelRect[] = [];
-  for (let y = -128; y < 128; y += 4) for (let x = -128; x < 128; x += 4) {
-    const distance = Math.hypot(x + 2, y + 2) / 128;
+  for (let y = -160; y < 160; y += 4) for (let x = -160; x < 160; x += 4) {
+    const distance = Math.hypot(x + 2, y + 2) / 160;
     if (distance >= 1) continue;
-    pixels.push({ x, y, width: 4, height: 4, color: 0xffb752, alpha: (1 - distance) ** 1.5 * 0.45 });
+    pixels.push({ x, y, width: 4, height: 4, color: 0xffb752, alpha: (1 - distance) ** 1.25 * 0.62 });
   }
   return pixels;
 })();

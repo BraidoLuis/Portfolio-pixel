@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { fileURLToPath } from "node:url";
+import { cleanCharacterAlpha } from "./character-alpha.mjs";
 
 // The image tool supplied original female poses on a painted gray checker.
 // Flood only the neutral/light background connected to the outer image edge.
@@ -35,5 +36,6 @@ while (head < tail) {
   if (y + 1 < height) seed(index + width);
 }
 for (let index = 0; index < seen.length; index++) data[index * 4 + 3] = seen[index] ? 0 : 255;
+const fringe = cleanCharacterAlpha(data, width, height);
 await sharp(data, { raw: { width, height, channels: 4 } }).png().toFile(target);
-console.log(`Cleared ${tail} connected checker pixels; preserved ${seen.length - tail} sprite pixels.`);
+console.log(`Cleared ${tail} connected checker pixels and ${fringe} pale edge pixels.`);

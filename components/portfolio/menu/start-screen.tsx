@@ -1,117 +1,81 @@
 "use client";
 
-import { motion } from "motion/react";
-import { BriefcaseBusiness, Code2, Play } from "lucide-react";
 import Image from "next/image";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { pixelButtonClass } from "@/lib/ui-styles";
-import { cn } from "@/lib/utils";
+import type { RefObject } from "react";
+import { ArrowRight, BriefcaseBusiness, Code2, FolderOpen, Play } from "lucide-react";
 import type { Character } from "@/components/portfolio/store/portfolio-store";
 import { siteConfig } from "@/content/site";
+import { pixelButtonClass } from "@/lib/ui-styles";
+import { cn } from "@/lib/utils";
 
 type StartScreenProps = {
   character: Character;
   linkedinUrl: string;
   onCharacterChange: (character: Character) => void;
+  onProjects: () => void;
+  projectsButtonRef: RefObject<HTMLButtonElement | null>;
   onStart: () => void;
 };
 
-const cloudBaseClass =
-  "pointer-events-none absolute left-[-32vw] h-auto w-[clamp(150px,19vw,360px)] opacity-85 [image-rendering:pixelated] will-change-transform";
-
-export function StartScreen({
-  character,
-  linkedinUrl,
-  onCharacterChange,
-  onStart,
-}: StartScreenProps) {
+export function StartScreen({ character, linkedinUrl, onCharacterChange, onProjects, projectsButtonRef, onStart }: StartScreenProps) {
   return (
-    <motion.section
-      className="relative isolate flex min-h-svh flex-col items-center justify-start gap-[clamp(.65rem,1.6vh,1.15rem)] overflow-hidden bg-[linear-gradient(180deg,#073d75_0%,#0d67b2_43%,#28a6dc_72%,#68d6e8_100%)] px-[clamp(1rem,3vw,3rem)] pb-[clamp(1rem,2.4vh,2rem)] pt-[clamp(.8rem,2vh,1.5rem)] max-[720px]:justify-start max-[720px]:gap-3.5 max-[720px]:overflow-y-auto max-[720px]:px-3 max-[720px]:pb-6 max-[720px]:pt-[4.4rem]"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.03 }}
-      transition={{ duration: 0.45 }}
-    >
+    <section className="relative isolate flex min-h-svh items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#073d75_0%,#116eb2_56%,#65cbd9_100%)] px-4 py-8 text-[#fff4d1] max-[720px]:items-start max-[720px]:overflow-y-auto max-[720px]:px-3 max-[720px]:pb-7 max-[720px]:pt-[4rem]">
       <MenuSky />
-      <TitleBoard />
-      <JourneyCard linkedinUrl={linkedinUrl} />
-
-      <div className="relative z-2 flex items-end gap-4 max-[720px]:w-[min(520px,94vw)] max-[720px]:flex-col max-[720px]:items-stretch">
-        <CharacterSelector
-          character={character}
-          onCharacterChange={onCharacterChange}
-        />
-        <motion.button
-          type="button"
-          className="inline-flex min-h-[86px] items-center justify-center gap-2.5 border-[5px] border-[#52291d] bg-[repeating-linear-gradient(0deg,#f1bd69_0_15px,#e8ae5b_15px_17px)] px-5 py-4 font-black uppercase text-[#5c2a1d] shadow-[inset_0_0_0_3px_#ffe3a0,0_7px_0_#32160f] max-[720px]:min-h-[62px]"
-          onClick={onStart}
-          whileHover={{ y: -3 }}
-          whileTap={{ y: 2, scale: 0.98 }}
-        >
-          <Play aria-hidden="true" /> Iniciar jogo
-        </motion.button>
+      <div className="relative z-1 mx-auto flex w-full max-w-[1040px] flex-col items-center gap-5 max-[720px]:gap-3.5 max-[360px]:gap-2">
+        <TitleBoard />
+        <div className="grid w-full grid-cols-[minmax(0,1.35fr)_minmax(310px,.85fr)] items-stretch gap-4 max-[720px]:max-w-[520px] max-[720px]:grid-cols-1 max-[720px]:gap-3">
+          <JourneyCard linkedinUrl={linkedinUrl} onProjects={onProjects} projectsButtonRef={projectsButtonRef} />
+          <div className="flex flex-col justify-between gap-4 border-[5px] border-[#52291d] bg-[repeating-linear-gradient(0deg,#f2cc83_0_16px,#edc47a_16px_18px)] p-4 text-[#4b2b22] shadow-[inset_0_0_0_3px_#ffedbd,0_7px_0_rgba(47,22,13,.55)] max-[720px]:gap-3 max-[720px]:p-3 max-[360px]:p-2.5">
+            <CharacterSelector character={character} onCharacterChange={onCharacterChange} />
+            <button
+              type="button"
+              className="group flex min-h-[68px] w-full items-center justify-center gap-3 border-[4px] border-[#2d1814] bg-[#a9592e] px-4 py-2 text-[clamp(1.15rem,2vw,1.45rem)] font-black text-[#fff2c4] shadow-[inset_0_0_0_3px_#de9250,0_5px_0_#30160f] transition-[transform,filter] hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0.5 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#fff0b6] max-[720px]:min-h-[60px] max-[360px]:min-h-[56px]"
+              onClick={onStart}
+            >
+              <Play className="size-5 fill-current" aria-hidden="true" />
+              Iniciar o jogo
+              <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <p className="text-center text-sm font-bold text-[#fff2ce] [text-shadow:1px_2px_0_#28567a] max-[720px]:hidden">
+          Escolha seu personagem e descubra o mundo no seu ritmo.
+        </p>
       </div>
-    </motion.section>
+    </section>
   );
 }
 
 function MenuSky() {
-  const clouds = [
-    "top-[15%] animate-[cloud-pass_34s_linear_infinite] [animation-delay:-4s]",
-    "top-[39%] w-[clamp(190px,25vw,470px)] animate-[cloud-pass_47s_linear_infinite] opacity-75 [animation-delay:-31s] max-[720px]:w-[clamp(170px,48vw,290px)]",
-    "top-[64%] w-[clamp(130px,16vw,310px)] animate-[cloud-pass_39s_linear_infinite] opacity-70 [animation-delay:-18s]",
-    "top-[78%] w-[clamp(210px,29vw,540px)] animate-[cloud-pass_56s_linear_infinite] opacity-60 [animation-delay:-45s] max-[720px]:w-[clamp(170px,48vw,290px)]",
-  ];
-
   return (
-    <div
-      className="pointer-events-none absolute inset-0 z-0 overflow-hidden after:absolute after:inset-x-0 after:bottom-0 after:h-[13%] after:bg-[linear-gradient(180deg,transparent,rgba(215,249,246,.2))] after:content-['']"
-      aria-hidden="true"
-    >
-      <span className="absolute left-[11%] top-[6%] size-[5px] animate-[twinkle_2.8s_steps(2)_infinite] bg-[#fff9d5] shadow-[0_-7px_0_rgba(255,249,213,.35),0_7px_0_rgba(255,249,213,.35),-7px_0_0_rgba(255,249,213,.35),7px_0_0_rgba(255,249,213,.35)] [image-rendering:pixelated]" />
-      <span className="absolute left-[61%] top-[11%] size-[5px] scale-[.65] animate-[twinkle_2.8s_steps(2)_infinite] bg-[#fff9d5] shadow-[0_-7px_0_rgba(255,249,213,.35),0_7px_0_rgba(255,249,213,.35),-7px_0_0_rgba(255,249,213,.35),7px_0_0_rgba(255,249,213,.35)] [animation-delay:.9s] [image-rendering:pixelated]" />
-      <span className="absolute right-[8%] top-[20%] size-[5px] scale-80 animate-[twinkle_2.8s_steps(2)_infinite] bg-[#fff9d5] shadow-[0_-7px_0_rgba(255,249,213,.35),0_7px_0_rgba(255,249,213,.35),-7px_0_0_rgba(255,249,213,.35),7px_0_0_rgba(255,249,213,.35)] [animation-delay:1.6s] [image-rendering:pixelated]" />
-      {clouds.map((className, index) => (
-        <Image
-          key={className}
-          className={cn(cloudBaseClass, className, "max-[720px]:w-[clamp(120px,36vw,220px)]")}
-          src="/game/menu-cloud.png"
-          alt=""
-          width={640}
-          height={300}
-          priority={index === 0}
-          unoptimized
-        />
-      ))}
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+      <span className="absolute left-[12%] top-[14%] size-[4px] bg-[#e8eac2] shadow-[0_-7px_0_#a5cfce,0_7px_0_#a5cfce,-7px_0_0_#a5cfce,7px_0_0_#a5cfce]" />
+      <span className="absolute right-[12%] top-[25%] size-[4px] bg-[#e8eac2] shadow-[0_-7px_0_#a5cfce,0_7px_0_#a5cfce,-7px_0_0_#a5cfce,7px_0_0_#a5cfce]" />
+      <Image
+        className="absolute left-[-24vw] top-[68%] h-auto w-[clamp(210px,25vw,370px)] animate-[cloud-pass_48s_linear_infinite] opacity-75 [animation-delay:-23s] [image-rendering:pixelated]"
+        src="/game/menu-cloud.webp"
+        alt=""
+        width={640}
+        height={300}
+        unoptimized
+      />
+      <Image
+        className="absolute left-[-28vw] top-[22%] h-auto w-[clamp(160px,18vw,280px)] animate-[cloud-pass_39s_linear_infinite] opacity-60 [animation-delay:-8s] [image-rendering:pixelated]"
+        src="/game/menu-cloud.webp"
+        alt=""
+        width={640}
+        height={300}
+        unoptimized
+      />
     </div>
   );
 }
 
 function TitleBoard() {
   return (
-    <motion.header
-      className={[
-        "relative z-2 grid overflow-hidden",
-        "aspect-[762/311] w-[min(1130px,94vw,118svh)]",
-        "place-content-center",
-        "px-[11%] py-[6%]",
-        "text-center text-[#71371e]",
-        "[filter:drop-shadow(0_10px_0_rgba(46,18,12,.72))]",
-        "[text-shadow:3px_3px_0_#f6cf81,1px_0_0_#4e2418]",
-        "max-[720px]:w-[94vw] max-[720px]:px-[7%]",
-      ].join(" ")}
-      initial={{ y: -40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{
-        type: "spring",
-        stiffness: 90,
-        damping: 13,
-      }}
-    >
-      {/* Recorta somente a transparência externa do PNG, sem deformar a moldura. */}
+    <header className="relative grid aspect-[762/311] w-[min(790px,88vw,87svh)] place-content-center px-[11%] py-[6%] text-center text-[#71371e] [filter:drop-shadow(0_8px_0_rgba(46,18,12,.65))] [text-shadow:2px_2px_0_#f6cf81,1px_0_0_#4e2418] max-[720px]:w-[94vw] max-[720px]:px-[7%] max-[360px]:w-[90vw]">
       <Image
-        src="/game/menu-title-board.png"
+        src="/game/menu-title-board.webp"
         alt=""
         width={775}
         height={322}
@@ -119,123 +83,81 @@ function TitleBoard() {
         unoptimized
         className="pointer-events-none absolute left-[-1.31%] top-[-2.89%] h-[103.54%] w-[101.71%] max-w-none [image-rendering:pixelated]"
       />
-      <span
-        className={[
-          "relative block whitespace-nowrap",
-          "text-[clamp(1.15rem,2.65vw,2.65rem)]",
-          "font-black leading-none tracking-[.035em]",
-          "max-[720px]:text-[clamp(.85rem,4vw,1.35rem)]",
-          "max-[720px]:tracking-normal",
-        ].join(" ")}
-      >
-        LUÍS FELIPE DOS SANTOS BRAIDO
-      </span>
-
-      <strong
-        className={[
-          "relative mt-3 block whitespace-nowrap",
-          "text-[clamp(1rem,2.2vw,2rem)]",
-          "leading-none tracking-[.08em]",
-          "max-[720px]:mt-1.5",
-          "max-[720px]:text-[clamp(.75rem,3.5vw,1.15rem)]",
-        ].join(" ")}
-      >
-        PORTFÓLIO
-      </strong>
-    </motion.header>
+      <p className="relative mb-2 text-[clamp(.8rem,1.5vw,1rem)] font-black uppercase tracking-[.18em] max-[720px]:mb-1 max-[720px]:text-[.65rem]">
+        Portfólio interativo
+      </p>
+      <h1 className="relative text-[clamp(1.25rem,2.9vw,2.4rem)] font-black leading-[.95] tracking-[.025em] max-[720px]:text-[clamp(.9rem,4vw,1.35rem)]">
+        LUÍS FELIPE BRAIDO
+      </h1>
+      <p className="relative mt-2 text-[clamp(.8rem,1.5vw,1rem)] font-black uppercase tracking-[.12em] max-[720px]:mt-1 max-[720px]:text-[.65rem]">
+        Desenvolvedor full stack
+      </p>
+    </header>
   );
 }
 
-function JourneyCard({ linkedinUrl }: { linkedinUrl: string }) {
+function JourneyCard({ linkedinUrl, onProjects, projectsButtonRef }: { linkedinUrl: string; onProjects: () => void; projectsButtonRef: RefObject<HTMLButtonElement | null> }) {
   return (
-    <motion.div
-      className="relative z-2 w-[min(760px,90vw)] border-[5px] border-[#8d4c2a] bg-[repeating-linear-gradient(0deg,#f7d894_0_16px,#f2cc83_16px_18px)] px-[clamp(1rem,3vw,2rem)] py-3 text-center font-bold leading-[1.35] text-[#4b2b22] outline-3 outline-[#e89a4c] shadow-[0_7px_0_rgba(47,22,13,.65),inset_0_0_0_3px_#ffe8af] max-[720px]:text-[.83rem]"
-      initial={{ y: 24, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.18 }}
-    >
-      <p>
-        Sou estudante de Engenharia da Computação na UERJ e desenvolvedor Full
-        Stack. Crio aplicações web com React, Next.js, TypeScript, Node.js e
-        Supabase e também direciono meus estudos para Segurança da Informação.
-      </p>
-      <p className="mt-2.5 text-[#6f442e]">
-        Explore este mundo para conhecer os projetos, habilidades, experiências e certificações
-        da minha jornada.
-      </p>
-      <nav className="mt-3.5 flex flex-wrap justify-center gap-2.5" aria-label="Redes profissionais">
-        <a className={pixelButtonClass} href={siteConfig.githubUrl} target="_blank" rel="noreferrer">
-          <Code2 className="size-[18px]" aria-hidden="true" /> GitHub
+    <div className="flex flex-col justify-between border-[5px] border-[#8d4c2a] bg-[repeating-linear-gradient(0deg,#f7d894_0_16px,#f2cc83_16px_18px)] p-[clamp(1rem,2.4vw,1.65rem)] text-[#4b2b22] shadow-[inset_0_0_0_3px_#ffe8af,0_7px_0_rgba(47,22,13,.55)] max-[360px]:p-3">
+      <div>
+        <p className="text-sm font-black uppercase tracking-[.12em] text-[#90502d]">Bem-vindo ao meu mundo</p>
+        <h2 className="mt-2 text-[clamp(1.7rem,3vw,2.4rem)] font-black leading-[1.05] text-[#673a25] max-[720px]:text-[1.7rem] max-[360px]:text-[1.5rem]">
+          Olá, eu sou o Luís.
+        </h2>
+        <p className="mt-3 max-w-[52ch] text-[clamp(1rem,1.5vw,1.12rem)] font-bold leading-[1.35] max-[360px]:text-[.95rem]">
+          Estudo Engenharia da Computação na UERJ e desenvolvo aplicações web. Também exploro segurança da informação.
+        </p>
+        <p className="mt-2 max-w-[52ch] text-[clamp(1rem,1.5vw,1.12rem)] font-bold leading-[1.35] text-[#6f442e] max-[360px]:text-[.95rem]">
+          Entre no mapa para conhecer meus projetos, habilidades e experiências.
+        </p>
+      </div>
+      <nav className="mt-5 flex flex-wrap gap-2 max-[720px]:mt-4 max-[720px]:gap-1.5 max-[360px]:gap-1" aria-label="Acessos rápidos">
+        <button ref={projectsButtonRef} className={cn(pixelButtonClass, "flex-1 whitespace-nowrap max-[720px]:gap-1 max-[720px]:px-1.5 max-[720px]:text-[.86rem] max-[360px]:min-h-10 max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[.78rem]")} type="button" onClick={onProjects}>
+          <FolderOpen className="size-[18px] max-[360px]:size-3.5" aria-hidden="true" /> Projetos
+        </button>
+        <a className={cn(pixelButtonClass, "flex-1 whitespace-nowrap max-[720px]:gap-1 max-[720px]:px-1.5 max-[720px]:text-[.86rem] max-[360px]:min-h-10 max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[.78rem]")} href={siteConfig.githubUrl} target="_blank" rel="noreferrer">
+          <Code2 className="size-[18px] max-[360px]:size-3.5" aria-hidden="true" /> GitHub
         </a>
-        <a className={pixelButtonClass} href={linkedinUrl} target="_blank" rel="noreferrer">
-          <BriefcaseBusiness className="size-[18px]" aria-hidden="true" /> LinkedIn
+        <a className={cn(pixelButtonClass, "flex-1 whitespace-nowrap max-[720px]:gap-1 max-[720px]:px-1.5 max-[720px]:text-[.86rem] max-[360px]:min-h-10 max-[360px]:gap-0.5 max-[360px]:px-1 max-[360px]:text-[.78rem]")} href={linkedinUrl} target="_blank" rel="noreferrer">
+          <BriefcaseBusiness className="size-[18px] max-[360px]:size-3.5" aria-hidden="true" /> LinkedIn
         </a>
       </nav>
-    </motion.div>
+    </div>
   );
 }
 
-function CharacterSelector({
-  character,
-  onCharacterChange,
-}: Pick<StartScreenProps, "character" | "onCharacterChange">) {
+function CharacterSelector({ character, onCharacterChange }: Pick<StartScreenProps, "character" | "onCharacterChange">) {
   return (
-    <fieldset className="m-0 border-0 p-0 max-[720px]:w-full">
-      <legend className="mb-2 w-full text-center font-black [text-shadow:2px_2px_0_#28567a]">
-        Escolha seu personagem
-      </legend>
-      <RadioGroup
-        value={character}
-        onValueChange={(value) => onCharacterChange(value as Character)}
-        className="grid grid-cols-2 gap-2.5"
-      >
-        <CharacterCard
-          value="masculine"
-          label="Masculino"
-          image="/game/character-masculine-portrait.png"
-          selected={character === "masculine"}
-        />
-        <CharacterCard
-          value="feminine"
-          label="Feminino"
-          image="/game/character-feminine-portrait.png"
-          selected={character === "feminine"}
-        />
-      </RadioGroup>
+    <fieldset className="m-0 min-w-0 border-0 p-0">
+      <legend className="mb-3 text-[1.1rem] font-black text-[#673a25]">Escolha seu personagem</legend>
+      <div className="grid grid-cols-2 gap-2">
+        <CharacterCard value="masculine" label="Masculino" image="/game/character-masculine-portrait.png" selected={character === "masculine"} onSelect={onCharacterChange} />
+        <CharacterCard value="feminine" label="Feminino" image="/game/character-feminine-portrait.png" selected={character === "feminine"} onSelect={onCharacterChange} />
+      </div>
     </fieldset>
   );
 }
 
-function CharacterCard({
-  value,
-  label,
-  image,
-  selected,
-}: {
-  value: Character;
-  label: string;
-  image: string;
-  selected: boolean;
-}) {
+function CharacterCard({ value, label, image, selected, onSelect }: { value: Character; label: string; image: string; selected: boolean; onSelect: (character: Character) => void }) {
   return (
     <label
       className={cn(
-        "flex min-h-[86px] min-w-[158px] cursor-pointer items-center justify-start gap-2.5 border-4 border-[#52291d] bg-[repeating-linear-gradient(0deg,#f4ce82_0_14px,#ecc074_14px_16px)] px-3 py-1.5 font-black text-[#4b2b22] shadow-[inset_0_0_0_2px_#ffd88b,0_4px_0_#30160f] max-[720px]:min-h-[76px] max-[720px]:min-w-0 max-[720px]:justify-center max-[720px]:px-1.5 max-[720px]:text-[.8rem]",
-        selected && "-translate-y-1 outline-4 outline-[#ffe59a]",
+        "relative flex min-w-0 cursor-pointer flex-col items-center gap-1.5 border-[3px] border-[#6f3d25] bg-[#f8dfa3] p-2 text-center font-black shadow-[inset_0_0_0_2px_#fff0c1,0_3px_0_#5b2e1b] transition-transform hover:-translate-y-0.5 focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-[#9a4d2a]",
+        selected && "-translate-y-0.5 border-[#9b542e] bg-[#ffe6a8] shadow-[inset_0_0_0_2px_#fff4c7,0_4px_0_#5b2e1b]",
       )}
     >
-      <RadioGroupItem value={value} className="sr-only" />
-      <span className="grid h-[72px] w-16 shrink-0 place-items-end overflow-hidden border-[3px] border-[#2d1814] bg-[rgba(119,67,36,.13)] max-[720px]:h-[60px] max-[720px]:w-[52px]" aria-hidden="true">
-        <Image
-          className="size-full object-contain object-bottom [image-rendering:pixelated]"
-          src={image}
-          alt=""
-          width={256}
-          height={256}
-          unoptimized
-        />
+      <input
+        type="radio"
+        name="menu-character"
+        value={value}
+        checked={selected}
+        onChange={() => onSelect(value)}
+        className="sr-only"
+      />
+      <span className="grid size-[66px] place-items-end overflow-hidden border-2 border-[#5b3422] bg-[#ddbd82] max-[360px]:size-[58px]" aria-hidden="true">
+        <Image className="size-full object-contain object-bottom [image-rendering:pixelated]" src={image} alt="" width={256} height={256} unoptimized />
       </span>
-      <span>{label}</span>
+      <span className="text-[.95rem] leading-none">{label}</span>
     </label>
   );
 }

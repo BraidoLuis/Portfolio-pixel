@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePortfolioStore } from "../store/portfolio-store";
+import { FISHING_MILESTONES, usePortfolioStore } from "../store/portfolio-store";
 
-const achievementMessage = "Conquista desbloqueada: 3 peixes capturados";
+const achievementMessage = (milestone: number) => `Conquista desbloqueada: ${milestone} peixes capturados`;
 
 /** React HUD stays above clouds, lighting and camera transforms. */
 export function FishingHud() {
   const count = usePortfolioStore((state) => state.fishCaught);
-  const unlocked = usePortfolioStore((state) => state.fishingAchievement);
   const [notice, setNotice] = useState<string | null>(null);
   const [fishing, setFishing] = useState(false);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const showAchievement = () => {
-      setNotice(achievementMessage);
+    const showAchievement = (event: Event) => {
+      const milestone = (event as CustomEvent<{ fishCaught: number }>).detail?.fishCaught;
+      if (!FISHING_MILESTONES.some((target) => target === milestone)) return;
+      setNotice(achievementMessage(milestone));
       clearTimeout(timer);
       timer = setTimeout(() => setNotice(null), 5000);
     };
@@ -34,13 +35,13 @@ export function FishingHud() {
       {(count > 0 || fishing) && (
         <div className="absolute left-4 top-[4.5rem] z-20 flex items-center gap-2 border-[3px] border-[#2d1814] bg-[#5b2d1c]/95 px-3 py-2 text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]">
           <output aria-live="polite" aria-label={`${count} peixes capturados`} className="text-sm font-bold">Peixes: {count}</output>
-          {unlocked && (
-            <button type="button" aria-label={achievementMessage} title={achievementMessage}
-              className="grid size-8 place-items-center border-2 border-[#e7b952] bg-[#352218] text-[#ffdc67] focus-visible:outline-2 focus-visible:outline-[#fff0bd]"
-              onClick={() => setNotice((current) => current ? null : achievementMessage)}>
-              <PixelStar />
+          {FISHING_MILESTONES.filter((milestone) => count >= milestone).map((milestone) => (
+            <button key={milestone} type="button" aria-label={achievementMessage(milestone)} title={achievementMessage(milestone)}
+              className="relative grid size-8 shrink-0 place-items-center border-2 border-[#e7b952] bg-[#352218] text-[#ffdc67] focus-visible:outline-2 focus-visible:outline-[#fff0bd]"
+              onClick={() => setNotice((current) => current === achievementMessage(milestone) ? null : achievementMessage(milestone))}>
+              <PixelStar /><span aria-hidden="true" className="absolute -bottom-1 -right-1 bg-[#352218] px-0.5 text-[9px] font-black leading-none">{milestone}</span>
             </button>
-          )}
+          ))}
         </div>
       )}
       {fishing && (

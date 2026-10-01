@@ -35,19 +35,33 @@ assert.equal(first.getState().fishCaught, 3);
 assert.equal(first.getState().fishingAchievement, true);
 assert.equal(first.getState().recordFishCatch(), false);
 assert.equal(first.getState().fishCaught, 4);
+for (let count = 5; count <= 50; count++) {
+  assert.equal(first.getState().recordFishCatch(), [10, 20, 50].includes(count), `unlock at ${count}`);
+  assert.equal(first.getState().fishCaught, count);
+}
 first.getState().returnToMenu();
 
 const second = loadStore();
 assert.equal(second.getState().started, false);
 assert.equal(second.getState().character, "feminine");
-assert.equal(second.getState().fishCaught, 4);
+assert.equal(second.getState().fishCaught, 50);
 assert.equal(second.getState().fishingAchievement, true);
 second.getState().startGame();
 assert.equal(second.getState().recordFishCatch(), false, "Achievement must never be granted twice");
-assert.equal(second.getState().fishCaught, 5);
+assert.equal(second.getState().fishCaught, 51);
 const persisted = JSON.parse(values.get("luis-pixel-portfolio"));
-assert.equal(persisted.state.fishCaught, 5);
+assert.equal(persisted.state.fishCaught, 51);
 assert.equal(persisted.state.fishingAchievement, true);
+
+// A player returning from a pre-milestones version keeps previous catches;
+// already-passed thresholds are visible from count, without re-announcing them.
+values.set("luis-pixel-portfolio", JSON.stringify({ state: {
+  fishCaught: 27, fishingAchievement: true,
+}, version: 0 }));
+const returning = loadStore();
+assert.equal(returning.getState().fishCaught, 27);
+assert.equal(returning.getState().recordFishCatch(), false);
+assert.equal(returning.getState().fishCaught, 28);
 
 // Old local storage did not have fishing fields. Its other preferences survive.
 values.set("luis-pixel-portfolio", JSON.stringify({ state: {
@@ -58,4 +72,4 @@ assert.equal(migrated.getState().fishCaught, 0);
 assert.equal(migrated.getState().fishingAchievement, false);
 assert.equal(migrated.getState().soundEnabled, false);
 assert.deepEqual(migrated.getState().discovered, ["projects"]);
-console.log("Fishing achievement passed: third-catch unlock once, count increases, survives menu/reload, older preferences retain defaults.");
+console.log("Fishing achievements passed: 3/10/20/50 unlock exactly once, persisted count survives menu/reload, older preferences retain defaults.");

@@ -5,7 +5,8 @@ export const EXTERIOR_TILESET_COLUMNS = 32;
 export const EXTERIOR_GROUND_VARIANTS = 8;
 export const EXTERIOR_WATER_FRAME = 512 * EXTERIOR_GROUND_VARIANTS;
 export const EXTERIOR_CLIFF_FRAME = EXTERIOR_WATER_FRAME + 64;
-export const EXTERIOR_STAIRS_FRAME = EXTERIOR_CLIFF_FRAME + 4;
+export const EXTERIOR_CLIFF_FRAME_COUNT = 16;
+export const EXTERIOR_STAIRS_FRAME = EXTERIOR_CLIFF_FRAME + EXTERIOR_CLIFF_FRAME_COUNT;
 export const EXTERIOR_TERRAIN_FRAME_COUNT = EXTERIOR_STAIRS_FRAME + 16;
 
 /** Clockwise neighbors, plus the center bit, describe reusable terrain pieces.
@@ -39,7 +40,11 @@ export function getExteriorTileFrame(kind: GroundTile, column: number, row: numb
   if (kind === "grass" || kind === "path") {
     return getExteriorGroundMask(column, row) * EXTERIOR_GROUND_VARIANTS + variant;
   }
-  if (kind === "cliff") return EXTERIOR_CLIFF_FRAME + variant % 4;
+  if (kind === "cliff") {
+    const edge = (x: number, y: number) => Number(EXTERIOR_TILES[y]?.[x] !== "cliff");
+    return EXTERIOR_CLIFF_FRAME + edge(column - 1, row) + edge(column + 1, row) * 2 +
+      edge(column, row - 1) * 4 + edge(column, row + 1) * 8;
+  }
   if (kind === "stairs") {
     const edge = (x: number, y: number) => Number(EXTERIOR_TILES[y]?.[x] !== "stairs");
     return EXTERIOR_STAIRS_FRAME + edge(column - 1, row) + edge(column + 1, row) * 2 +

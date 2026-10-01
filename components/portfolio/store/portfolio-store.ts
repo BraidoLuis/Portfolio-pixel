@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 export type Character = "masculine" | "feminine";
+export const FISHING_MILESTONES = [3, 10, 20, 50] as const;
 export type PanelType =
   | "intro"
   | "tv"
@@ -51,8 +52,10 @@ export const usePortfolioStore = create<PortfolioStore>()(
         let unlocked = false;
         set((state) => {
           const fishCaught = state.fishCaught + 1;
-          unlocked = !state.fishingAchievement && fishCaught >= 3;
-          return { fishCaught, fishingAchievement: state.fishingAchievement || unlocked };
+          // The persisted count is the source of truth for every milestone.
+          // Existing saves therefore retain their 3-fish star and progress.
+          unlocked = FISHING_MILESTONES.some((milestone) => fishCaught === milestone);
+          return { fishCaught, fishingAchievement: state.fishingAchievement || fishCaught >= 3 };
         });
         return unlocked;
       },

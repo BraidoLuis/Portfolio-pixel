@@ -155,7 +155,7 @@ object("dock", "dock", 1024, 976, 64, 96, undefined, {
 
 // Hand-placed accents make the clearings and their approaches recognizable.
 const accents = [
-  ["stump", 528, 176], ["stump", 752, 176], ["rocks", 704, 336],
+  ["stump", 480, 176], ["stump", 800, 176], ["rocks", 704, 336],
   ["rocks", 384, 160], ["rocks", 176, 48], ["rocks", 1120, 176],
   ["rocks", 352, 288], ["stump", 176, 240], ["stump", 752, 288],
   ["rocks", 512, 400], ["stump", 240, 544], ["rocks", 1120, 480],
@@ -236,10 +236,39 @@ for (let row = 1; row < 39; row += 1) {
   }
 }
 
+// Low, non-colliding vegetation fills quiet grassy pockets without covering
+// chests, signs, stairs or the walkable path. Mixed sizes and staggered origins
+// keep the existing reusable plant art from forming a visible grid.
+for (const [left, top, right, bottom] of [
+  [64, 288, 208, 584], [392, 272, 512, 560],
+  [776, 264, 912, 512], [1072, 304, 1224, 592],
+  [64, 784, 176, 1056], [288, 832, 448, 1120],
+  [896, 1040, 1152, 1216], [448, 80, 832, 288],
+] as const) {
+  for (let y = top; y < bottom; y += 48) for (let x = left; x < right; x += 48) {
+    const seed = noise(x, y, 31);
+    if (seed > 0.58) continue;
+    const px = x + Math.floor(noise(x, y, 32) * 24) - 12;
+    const py = y + Math.floor(noise(x, y, 33) * 22) - 11;
+    if (nearLandmark(px, py, 58)) continue;
+    if (![-12, 12].every((dx) => [-16, -2].every((dy) => groundAt(px + dx, py + dy) === "grass"))) continue;
+    if (objects.some((item) => Math.hypot(item.x - px, item.y - py) < 32)) continue;
+    const kind = seed < 0.12 ? "flowers" : seed < 0.27 ? "bush" : "grass";
+    const size = kind === "bush" ? 40 : seed < 0.4 ? 24 : 32;
+    object(`meadow-${x}-${y}`, kind, px, py, size, size, undefined, { depth: 3 });
+  }
+}
+
 // Added after the deterministic groves/botanicals so their existing positions
 // never change. Every 16px base is entirely on grass, outside the path grid.
 [[496, 736], [784, 752], [432, 624], [848, 560], [944, 1040]].forEach(([x, y], index) =>
   object(`path-lantern-${index}`, "lantern", x, y, 48, 96, trunk(x, y, 16, 16)));
+
+// Two posts frame the terrace stairs; pairs near the other chest clearings
+// illuminate their approach from grass rather than narrowing the paths.
+[[528, 224], [752, 224], [144, 448], [464, 416],
+  [784, 384], [1120, 528], [112, 960], [320, 992]].forEach(([x, y], index) =>
+  object(`chest-lantern-${index}`, "lantern", x, y, 48, 96, trunk(x, y, 16, 16)));
 
 export const EXTERIOR_OBJECTS: readonly ExteriorObject[] = objects;
 

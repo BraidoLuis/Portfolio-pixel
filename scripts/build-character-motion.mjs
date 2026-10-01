@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { cleanCharacterAlpha } from "./character-alpha.mjs";
 
 const root = new URL("../", import.meta.url);
 const source = fileURLToPath(new URL("docs/character-motion/", root));
@@ -13,7 +14,9 @@ const frameSize = 256;
 let frameIndex = 0;
 
 async function addFrame(name, nativeFrame) {
-  const input = await sharp(nativeFrame).resize(frameSize, frameSize, { kernel: "nearest" }).png().toBuffer();
+  const { data, info } = await sharp(nativeFrame).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  cleanCharacterAlpha(data, info.width, info.height, 2);
+  const input = await sharp(data, { raw: info }).resize(frameSize, frameSize, { kernel: "nearest" }).png().toBuffer();
   const x = frameIndex % columns * frameSize;
   const y = Math.floor(frameIndex / columns) * frameSize;
   frames[name] = { frame: { x, y, w: frameSize, h: frameSize }, rotated: false, trimmed: false,
