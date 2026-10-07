@@ -56,14 +56,15 @@ assert(getCloudPosition(20_000, 0).x > getCloudPosition(10_000, 0).x);
 const nodes = [];
 let shutdown;
 function node() {
-  const value = { depth: 0, alpha: 1, destroyed: false,
+  const value = { name: "", depth: 0, alpha: 1, destroyed: false,
     setName(name) { this.name = name; return this; }, setDepth(depth) { this.depth = depth; return this; },
     setPosition(x, y) { this.x = x; this.y = y; return this; }, setVisible(visible) { this.visible = visible; return this; },
     setAlpha(alpha) { this.alpha = alpha; return this; }, fillStyle() { return this; }, fillRect() { return this; }, clear() { return this; },
+    generateTexture() { return this; },
     destroy() { this.destroyed = true; },
   }; nodes.push(value); return value;
 }
-const view = createExteriorAtmosphere({ add: { graphics: node, rectangle: node }, events: { once(_, fn) { shutdown = fn; }, off() {} } });
+const view = createExteriorAtmosphere({ textures: { exists() { return false; } }, add: { graphics: node, rectangle: node, image(x, y) { return node().setPosition(x, y); } }, events: { once(_, fn) { shutdown = fn; }, off() {} } });
 view.update(168_000);
 assert(nodes.every((item) => item.depth < 5000));
 assert.equal(nodes.find((item) => item.name === "night-light").alpha, 0.52);

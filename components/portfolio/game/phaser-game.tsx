@@ -14,7 +14,7 @@ import {
   WORLD_PLAYER_SIZE,
 } from "@/components/portfolio/game/world-config";
 import { canOccupyWorld } from "@/components/portfolio/game/world-walkability";
-import { buildExterior, preloadExterior } from "./exterior-renderer";
+import { buildExterior, preloadExterior, type ExteriorView } from "./exterior-renderer";
 import { WORLD_INTERACTIONS } from "./exterior-map";
 import { buildHouse, preloadHouse, type HouseView } from "./house-renderer";
 import { HOUSE_INTERACTIONS, HOUSE_LIGHTS, HOUSE_MARKER, HOUSE_PLAYER_SIZE, type HouseInteraction, type HouseRestId } from "./house-map";
@@ -25,7 +25,6 @@ import { FishingController, getFishingAnimation, WORLD_ACTIVITIES, type WorldAct
 import { createFishingView, type FishingView } from "./fishing-renderer";
 import { CHARACTER_MOTION_TEXTURE, createDiagonalAnimations, getDiagonalFrame, getFishingPoseFrame,
   getMovementFacing, isDiagonalDirection, preloadCharacterMotion, type CharacterFacing } from "./character-motion";
-import type { ExteriorAtmosphereView } from "./exterior-atmosphere";
 
 type PhaserGameProps = {
   character: Character;
@@ -74,6 +73,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private interactions: Interaction[] = [];
         private nearest: Interaction | null = null;
         private prompt!: import("phaser").GameObjects.Text;
+        private promptAnchor?: Position;
+        private promptWrapWidth = 0;
         private cursors!: import("phaser").Types.Input.Keyboard.CursorKeys;
         private keys!: Record<"W" | "A" | "S" | "D", import("phaser").Input.Keyboard.Key>;
         private mobileDirections = new Set<string>();
@@ -85,7 +86,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private fireSprite?: import("phaser").GameObjects.Image;
         private fireTexture?: import("phaser").Textures.CanvasTexture;
         private houseView?: HouseView;
-        private exteriorView?: ExteriorAtmosphereView;
+        private exteriorView?: ExteriorView;
+        private unsubscribeAudio?: () => void;
         // A scene restart through either door must never reset the world clock.
         private worldTimeStartedAt = performance.now();
         private rest = new HouseRestController();
@@ -159,6 +161,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.pausedByPanel = false;
           this.transitioning = false;
           this.nearest = null;
+          this.promptAnchor = undefined;
+          this.promptWrapWidth = 0;
           this.mobileDirections.clear();
           this.lastFootstepAt = 0;
           this.footstepVariation = 0;
@@ -245,6 +249,15 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         create() {
+          const syncAudio = () => {
+            const { soundEnabled, volume } = usePortfolioStore.getState();
+            this.sound.setMute(!soundEnabled);
+            this.sound.setVolume(volume);
+          };
+          syncAudio();
+          this.unsubscribeAudio = usePortfolioStore.subscribe((state, previous) => {
+            if (state.soundEnabled !== previous.soundEnabled || state.volume !== previous.volume) syncAudio();
+          });
           this.createCharacterAnimations();
           this.buildArea();
           this.cursors = this.input.keyboard!.createCursorKeys();
@@ -427,7 +440,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.prompt = this.add
             .text(0, 0, "", {
               fontFamily: "Stardew Valley",
-              fontSize: "17px",
+              fontSize: "20px",
               fontStyle: "bold",
               color: "#4b2b22",
               backgroundColor: "#f6d99c",
@@ -712,13 +725,17 @@ export function PhaserGame({ character }: PhaserGameProps) {
           }
 
           this.sound.play(soundKey, {
-            volume: 0.14,
+            volume: 0.22,
             rate: Phaser.Math.FloatBetween(0.96, 1.04),
           });
         }
 
         update() {
-          this.exteriorView?.update(this.worldElapsedMs());
+          this.fitPromptToCamera();
+          this.exteriorView?.update(this.worldElapsedMs(), this.player ? {
+            x: this.player.x,
+            y: this.player.y + PLAYER_SIZE.world * (PLAYER_FOOTPRINT.offsetY + PLAYER_FOOTPRINT.height / 2 - 0.5),
+          } : undefined);
           if (!this.player) return;
           if (this.fishing.current) {
             this.player.setVelocity(0);
@@ -780,18 +797,16 @@ export function PhaserGame({ character }: PhaserGameProps) {
               caught: "Peixe capturado!",
               ready: "[E] Pescar novamente\n[Esc] Encerrar",
             };
-            this.prompt.setText(messages[this.fishing.phase])
-              .setWordWrapWidth(280)
-              .setPosition(fishing.position.x, fishing.position.y - 70).setVisible(true);
+            this.prompt.setText(messages[this.fishing.phase]);
+            this.showPrompt(fishing.position.x, fishing.position.y - 70);
             return;
           }
           const resting = this.rest.current;
           if (resting) {
             this.prompt.setText(this.wakingUp
               ? "Um novo dia começa neste mundo. Pressione E para levantar."
-              : "[E] Levantar")
-              .setWordWrapWidth(this.wakingUp ? 330 : 400)
-              .setPosition(this.wakingUp ? resting.x - 72 : resting.x, resting.y - resting.height / 2 - 12).setVisible(true);
+              : "[E] Levantar");
+            this.showPrompt(this.wakingUp ? resting.x - 72 : resting.x, resting.y - resting.height / 2 - 12);
             return;
           }
           let nearest: Interaction | null = null;
@@ -807,8 +822,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
           if (this.observation) {
             const { x, y, text, expires } = this.observation;
             if (this.time.now < expires && Math.hypot(this.player.x - x, this.player.y - y) < 110) {
-              this.prompt.setText(text).setWordWrapWidth(280)
-                .setPosition(x, y - 40).setVisible(true);
+              this.prompt.setText(text);
+              this.showPrompt(x, y - 40);
               return;
             }
             this.observation = undefined;
@@ -817,11 +832,37 @@ export function PhaserGame({ character }: PhaserGameProps) {
             this.prompt.setVisible(false);
             return;
           }
-          this.prompt
-            .setText(nearest.prompt ?? `${nearest.label}\n[E] Interagir`)
-            .setWordWrapWidth(330)
-            .setPosition(nearest.x, this.area === "house" && nearest.panel === "intro" ? HOUSE_MARKER.y - 30 : nearest.y - 36)
-            .setVisible(true);
+          this.prompt.setText(nearest.prompt ?? `${nearest.label}\n[E] Interagir`);
+          this.showPrompt(nearest.x, this.area === "house" && nearest.panel === "intro" ? HOUSE_MARKER.y - 30 : nearest.y - 36);
+        }
+
+        private showPrompt(x: number, y: number) {
+          this.promptAnchor = { x, y };
+          this.prompt.setPosition(x, y).setVisible(true);
+          this.fitPromptToCamera();
+        }
+
+        private fitPromptToCamera() {
+          if (!this.prompt?.visible || !this.promptAnchor) return;
+          const camera = this.cameras.main;
+          const zoom = Math.max(0.01, camera.zoom);
+          // Keep 20px text in screen pixels, including the fitted indoor camera.
+          this.prompt.setScale(1 / zoom);
+          const wrapWidth = Math.max(160, Math.min(330, this.scale.width - 56));
+          // Text wrapping uploads a canvas texture; only redo it on resize.
+          if (wrapWidth !== this.promptWrapWidth) {
+            this.prompt.setWordWrapWidth(wrapWidth);
+            this.promptWrapWidth = wrapWidth;
+          }
+          const view = camera.worldView;
+          // The camera computes its world rectangle at the first pre-render.
+          if (!view?.width || !view.height) return;
+          const margin = 12 / zoom;
+          const halfWidth = this.prompt.displayWidth / 2;
+          this.prompt.setPosition(
+            Phaser.Math.Clamp(this.promptAnchor.x, view.x + margin + halfWidth, view.right - margin - halfWidth),
+            Phaser.Math.Clamp(this.promptAnchor.y, view.y + margin + this.prompt.displayHeight, view.bottom - margin),
+          );
         }
 
         private playInteractionSound(interaction: Interaction) {
@@ -912,6 +953,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
         }
 
         private cleanupListeners() {
+          this.unsubscribeAudio?.();
+          this.unsubscribeAudio = undefined;
           this.input.keyboard?.off("keydown-E", this.onKeyboardInteract);
           this.input.keyboard?.off("keydown-SPACE", this.onKeyboardInteract);
           this.input.keyboard?.off("keyup-E", this.onKeyboardRelease);

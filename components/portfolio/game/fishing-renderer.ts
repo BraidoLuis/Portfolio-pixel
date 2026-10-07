@@ -27,7 +27,7 @@ function pixelLine(graphics: GameObjects.Graphics, start: Position, end: Positio
   }
 }
 
-function ripple(graphics: GameObjects.Graphics, center: Position, radius: number, alpha: number) {
+export function drawPixelRipple(graphics: GameObjects.Graphics, center: Position, radius: number, alpha: number) {
   graphics.fillStyle(0x9bdace, alpha);
   const occupied = new Set<string>();
   // Sparse stepped ellipses with small gaps read as water, not smooth vectors.
@@ -44,10 +44,10 @@ function ripple(graphics: GameObjects.Graphics, center: Position, radius: number
 }
 
 /** A small original pixel sprite: forked amber tail, teal scales and pale belly. */
-function caughtFish(graphics: GameObjects.Graphics, position: Position, wiggle: number) {
+export function drawPixelFish(graphics: GameObjects.Graphics, position: Position, wiggle: number, direction = 1, variant = 0, alpha = 1) {
   const palette: Record<string, number> = {
     o: 0x183e43, t: 0xd88c3d, h: 0xf5c66b, d: 0x22626a,
-    b: 0x389e9a, l: 0x82cfc0, p: 0xe6e5b5, e: 0x112c35,
+    b: [0x389e9a, 0x609aaf, 0x899958][variant % 3], l: 0x82cfc0, p: 0xe6e5b5, e: 0x112c35,
   };
   const rows = [
     "      ooo     ",
@@ -65,7 +65,7 @@ function caughtFish(graphics: GameObjects.Graphics, position: Position, wiggle: 
     const wag = Math.abs(wiggle) > 0.65 && row >= 2 && row <= 5 ? Math.sign(wiggle) * 2 : 0;
     for (const [column, color] of [...colors].entries()) {
       if (!palette[color]) continue;
-      graphics.fillStyle(palette[color], 1).fillRect(left + column * 2, top + row * 2 + (column < 4 ? wag : 0), 2, 2);
+      graphics.fillStyle(palette[color], alpha).fillRect(left + (direction < 0 ? 12 - column : column) * 2, top + row * 2 + (column < 4 ? wag : 0), 2, 2);
     }
   }
 }
@@ -86,7 +86,7 @@ export function createFishingView(scene: Scene, spot: FishingSpot): FishingView 
     if (motion.waterActive) {
       for (let index = 0; index < 3; index += 1) {
         const phase = (motion.ripplePhase + index / 3) % 1;
-        ripple(water, spot.bobber, 6 + phase * (motion.phase === "bite" || motion.phase === "reel" ? 30 : 20), (1 - phase) * 0.55);
+        drawPixelRipple(water, spot.bobber, 6 + phase * (motion.phase === "bite" || motion.phase === "reel" ? 30 : 20), (1 - phase) * 0.55);
       }
       if (motion.settled) water.fillStyle(0x155b62, 0.55).fillRect(pixel(bobber.x - 4), pixel(bobber.y + 6), 10, 2);
       if (motion.splash) {
@@ -140,7 +140,7 @@ export function createFishingView(scene: Scene, spot: FishingSpot): FishingView 
     tackle.fillStyle(0x8d332c, 1).fillRect(floatX, floatY + 4, 2, 2);
     if (motion.fish.visible) {
       pixelLine(tackle, bobber, { x: motion.fish.x + 10, y: motion.fish.y - 2 }, 0xcbd7b4);
-      caughtFish(tackle, motion.fish, motion.fish.wiggle);
+      drawPixelFish(tackle, motion.fish, motion.fish.wiggle);
       if (motion.phase === "caught") {
         const sparkle = Math.floor(elapsedMs / 180) % 2;
         tackle.fillStyle(sparkle ? 0xf8e09b : 0xfff2c4, 0.9);

@@ -26,7 +26,7 @@ export function UiSoundController({
   }, [volume]);
 
   useEffect(() => {
-    function playSelectionSound(event: MouseEvent) {
+    function playSelectionSound(event: Event) {
       if (!enabled || !audioRef.current) {
         return;
       }
@@ -38,7 +38,7 @@ export function UiSoundController({
       }
 
       const interactiveElement = target.closest(
-        "button, a, [role='button']",
+        event.type === "change" ? "input[type='radio']" : "button, a, [role='button']",
       );
 
       if (!interactiveElement) {
@@ -50,9 +50,13 @@ export function UiSoundController({
     }
 
     document.addEventListener("click", playSelectionSound);
+    // Native labels forward a click to the radio. Use its change event so
+    // pointer and keyboard selection play once, without label/click duplicates.
+    document.addEventListener("change", playSelectionSound);
 
     return () => {
       document.removeEventListener("click", playSelectionSound);
+      document.removeEventListener("change", playSelectionSound);
     };
   }, [enabled]);
 

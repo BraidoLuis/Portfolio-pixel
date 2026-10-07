@@ -109,7 +109,7 @@ export function GameScreen({ projects }: { projects: Project[] }) {
       </div>
 
       {fullscreenNotice && (
-        <div role="status" className="pointer-events-none absolute left-1/2 top-4 z-30 max-w-[70vw] -translate-x-1/2 border-2 border-[#d58a48] bg-[#352218]/95 px-3 py-2 text-center text-sm text-[#fff0bd]">
+        <div role="status" className="pointer-events-none absolute left-1/2 top-4 z-30 max-w-[70vw] -translate-x-1/2 border-2 border-[#d58a48] bg-[#352218]/95 px-3 py-2 text-center text-[1.0625rem] text-[#fff0bd]">
           {fullscreenNotice}
         </div>
       )}
@@ -126,13 +126,13 @@ export function GameScreen({ projects }: { projects: Project[] }) {
           −
         </button>
         <output
-          className="flex min-w-[68px] flex-col items-center justify-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-2 text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]"
+          className="flex min-w-[80px] flex-col items-center justify-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-2 text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]"
           aria-live="polite"
           aria-label={`Zoom do ${zoomArea.toLowerCase()}: ${zoomPercent}%`}
           title={`Zoom do ${zoomArea.toLowerCase()} em relação ao enquadramento padrão`}
         >
-          <span className="text-[9px] font-bold leading-3">{zoomArea}</span>
-          <span className="text-sm font-black leading-4">{zoomPercent}%</span>
+          <span className="text-[1rem] font-bold leading-tight">{zoomArea}</span>
+          <span className="text-[1.125rem] font-black leading-tight">{zoomPercent}%</span>
         </output>
         <button
           className={zoomButtonClass}
@@ -199,10 +199,10 @@ function DirectionButton({
 }
 
 const toolbarButtonClass =
-  "inline-flex min-h-[42px] items-center gap-1.5 border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-3 py-2 font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48] [&>svg]:size-[18px] max-[720px]:w-12 max-[720px]:justify-center max-[720px]:text-[0px] max-[720px]:[&>svg]:size-5";
+  "inline-flex min-h-[42px] items-center gap-1.5 border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.94)] px-3 py-2 text-[1.125rem] font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48] [&>svg]:size-[18px] max-[720px]:w-12 max-[720px]:justify-center max-[720px]:text-[0px] max-[720px]:[&>svg]:size-5";
 
 const zoomButtonClass =
-  "grid size-[42px] place-items-center border-[3px] border-[#2d1814] bg-[repeating-linear-gradient(0deg,#8f4b28_0_9px,#7b3c22_9px_11px)] text-[26px] font-black leading-none text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48,0_3px_0_#30160f] transition-transform enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 disabled:cursor-default disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-[#ffe59a]";
+  "grid size-[48px] place-items-center border-[3px] border-[#2d1814] bg-[repeating-linear-gradient(0deg,#8f4b28_0_9px,#7b3c22_9px_11px)] text-[26px] font-black leading-none text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48,0_3px_0_#30160f] transition-transform enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 disabled:cursor-default disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-[#ffe59a]";
 
 const mobileControlClass =
-  "grid size-[52px] touch-none place-items-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.88)] font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]";
+  "grid size-[52px] touch-none place-items-center border-[3px] border-[#2d1814] bg-[rgba(91,45,28,.88)] text-[1.25rem] font-black text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]";

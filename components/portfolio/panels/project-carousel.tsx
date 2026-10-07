@@ -42,7 +42,7 @@ export function ProjectCarousel({ projects }: { projects: Project[] }) {
           Novas missões serão adicionadas em breve.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 max-[720px]:grid-cols-1">
+        <div className="grid grid-cols-2 gap-4 max-[759px]:grid-cols-1">
           {visibleProjects.map((project) => <ProjectCard key={project.id} project={project} />)}
         </div>
       )}
@@ -87,13 +87,13 @@ function ProjectCard({ project }: { project: Project }) {
             aria-label={`Capa do projeto ${project.title}`}
           />
         )}
-        <p className="text-[.72rem] font-black uppercase text-[#94522f]">{project.role}</p>
-        <h3 className="mb-3 mt-1 text-[1.4rem] text-[#713b26]">{project.title}</h3>
+        <p className="text-[1rem] font-black uppercase text-[#94522f]">{project.role}</p>
+        <h3 className="mb-3 mt-1 text-[1.5rem] font-black leading-tight text-[#713b26]">{project.title}</h3>
         <p className="leading-normal">{project.summary}</p>
-        <p className="text-[.86rem] leading-normal"><strong>Missão:</strong> {project.solution}</p>
+        <p className="text-[1.125rem] leading-normal"><strong>Missão:</strong> {project.solution}</p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {project.technologies.map((technology) => (
-            <span key={technology} className="border-2 border-[rgba(89,46,27,.36)] bg-[rgba(104,55,31,.13)] px-2 py-1 text-xs font-black">
+            <span key={technology} className="border-2 border-[rgba(89,46,27,.36)] bg-[rgba(104,55,31,.13)] px-2 py-1 text-[1rem] font-black">
               {technology}
             </span>
           ))}
@@ -101,9 +101,9 @@ function ProjectCard({ project }: { project: Project }) {
       </div>
 
       {links.length > 0 && (
-        <div className={`mt-auto grid gap-2.5 ${links.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+        <div className={`mt-auto grid grid-cols-1 gap-2.5 ${links.length === 2 ? "min-[960px]:grid-cols-2" : ""}`}>
           {links.map((link) => (
-            <a key={link.label} className={`${pixelButtonClass} min-w-0 flex-wrap px-2 text-center text-[.75rem] leading-tight sm:text-[.82rem]`}
+            <a key={link.label} className={`${pixelButtonClass} min-w-0 flex-wrap px-2 text-center text-[1.0625rem] leading-snug`}
               href={link.href} target="_blank" rel="noreferrer">
               {link.label} {link.kind === "live" ? <ExternalLink aria-hidden="true" /> : <Code2 aria-hidden="true" />}
             </a>
@@ -128,7 +128,7 @@ function PaginationButton({
   return (
     <button
       type="button"
-      className="grid h-[38px] w-[42px] place-items-center border-[3px] border-[#2d1814] bg-[#9b542e] text-[#fff0bd] disabled:cursor-not-allowed disabled:opacity-35"
+      className="grid size-11 place-items-center border-[3px] border-[#2d1814] bg-[#9b542e] text-[#fff0bd] disabled:cursor-not-allowed disabled:opacity-35"
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
