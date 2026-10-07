@@ -33,20 +33,20 @@ export function FishingHud() {
   return (
     <>
       {(count > 0 || fishing) && (
-        <div className="absolute left-4 top-[4.5rem] z-20 flex items-center gap-2 border-[3px] border-[#2d1814] bg-[#5b2d1c]/95 px-3 py-2 text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]">
-          <output aria-live="polite" aria-label={`${count} peixes capturados`} className="text-sm font-bold">Peixes: {count}</output>
+        <div className="absolute left-4 top-[4.5rem] z-20 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 border-[3px] border-[#2d1814] bg-[#5b2d1c]/95 px-3 py-2 text-[#fff0bd] shadow-[inset_0_0_0_2px_#d58a48]">
+          <output aria-live="polite" aria-label={`${count} peixes capturados`} className="text-[1.125rem] font-bold">Peixes: {count}</output>
           {FISHING_MILESTONES.filter((milestone) => count >= milestone).map((milestone) => (
             <button key={milestone} type="button" aria-label={achievementMessage(milestone)} title={achievementMessage(milestone)}
               className="relative grid size-8 shrink-0 place-items-center border-2 border-[#e7b952] bg-[#352218] text-[#ffdc67] focus-visible:outline-2 focus-visible:outline-[#fff0bd]"
               onClick={() => setNotice((current) => current === achievementMessage(milestone) ? null : achievementMessage(milestone))}>
-              <PixelStar /><span aria-hidden="true" className="absolute -bottom-1 -right-1 bg-[#352218] px-0.5 text-[9px] font-black leading-none">{milestone}</span>
+              <PixelStar /><span aria-hidden="true" className="absolute -bottom-1 -right-1 bg-[#352218] px-0.5 text-[1rem] font-black leading-none">{milestone}</span>
             </button>
           ))}
         </div>
       )}
       {fishing && (
         <button type="button" onClick={() => window.dispatchEvent(new Event("portfolio:fishing-cancel"))}
-          className="absolute left-4 top-[8.5rem] z-20 border-2 border-[#d58a48] bg-[#352218]/95 px-3 py-2 text-sm font-bold text-[#fff0bd]">
+          className="absolute left-4 top-[8.5rem] z-20 border-2 border-[#d58a48] bg-[#352218]/95 px-3 py-2 text-[1.125rem] font-bold text-[#fff0bd]">
           Encerrar pesca · Esc
         </button>
       )}

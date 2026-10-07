@@ -59,8 +59,8 @@ export function TvPanel({ onSelect }: { onSelect: (panel: "about" | "education" 
             className="grid gap-1 border-[3px] border-[#5d311c] bg-[#e7b96b] px-3 py-4 text-left text-[#4a291d] shadow-[inset_0_0_0_3px_#f6d99c,3px_3px_0_#3e2118] transition-[transform,filter] hover:-translate-y-0.5 hover:brightness-105 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-[#fff0b6]"
             onClick={() => onSelect(channel.panel)}
           >
-            <strong className="text-[.72rem] uppercase tracking-[.08em] opacity-70">Canal {channel.id}</strong>
-            <span className="text-[1.05rem] font-black">{channel.label}</span>
+            <strong className="text-[1rem] uppercase tracking-[.08em] opacity-70">Canal {channel.id}</strong>
+            <span className="text-[1.25rem] font-black">{channel.label}</span>
           </button>
         ))}
       </div>
@@ -117,7 +117,7 @@ export function SkillsPanel({ onProjects }: { onProjects: () => void }) {
       <div className="my-5 grid gap-3.5">
         {skills.map((skill) => (
           <article key={skill.id} className="border-b-2 border-dashed border-[rgba(85,45,27,.4)] pb-3.5">
-            <h3 className="text-[1.02rem] text-[#6f3b25]">{skill.title}</h3>
+            <h3 className="text-[1.375rem] font-black leading-tight text-[#6f3b25]">{skill.title}</h3>
             <p className="my-1.5 leading-normal">{skill.summary}</p>
             <TagList items={skill.technologies} />
           </article>
@@ -144,8 +144,8 @@ export function ExperiencesPanel() {
             key={experience.id}
             className="relative border-l-[3px] border-[#9c5b32] pb-5 pl-6 before:absolute before:-left-2 before:top-0.5 before:size-[13px] before:border-[3px] before:border-[#6b3822] before:bg-[#e9a94f] before:content-['']"
           >
-            <span className="text-xs font-black text-[#875132]">{experience.period}</span>
-            <h3 className="text-[1.02rem] text-[#6f3b25]">{experience.title}</h3>
+            <span className="text-[1rem] font-black text-[#875132]">{experience.period}</span>
+            <h3 className="text-[1.375rem] font-black leading-tight text-[#6f3b25]">{experience.title}</h3>
             <p className="my-1.5 leading-normal">{experience.summary}</p>
           </article>
         ))}
@@ -165,8 +165,8 @@ export function CertificationsPanel() {
       <div className="mt-5 grid gap-3">
         {certifications.map((certification) => (
           <article key={certification.id} className="border-[3px] border-[#875132] bg-[rgba(129,74,38,.12)] p-4">
-            <span className="text-xs font-black uppercase tracking-[.08em] text-[#875132]">{certification.issuer}</span>
-            <h3 className="mt-1 text-[1.1rem] text-[#6f3b25]">{certification.title}</h3>
+            <span className="text-[1rem] font-black uppercase tracking-[.08em] text-[#875132]">{certification.issuer}</span>
+            <h3 className="mt-1 text-[1.375rem] font-black leading-tight text-[#6f3b25]">{certification.title}</h3>
             <p className="mt-2 leading-normal">{certification.summary}</p>
           </article>
         ))}

@@ -38,6 +38,7 @@ function image(x = 0, y = 0, texture = "walking", frame = 0) {
     setTexture(texture, frame) { this.texture = texture; this.frame = frame; return this; },
     setText(value) { this.text = value; return this; },
     setOrigin() { return this; },
+    setScale(value) { this.scaleX = value; this.scaleY = value; return this; },
     setWordWrapWidth(value) { this.wrapWidth = value; return this; },
     setCollideWorldBounds(value) { this.collideWorldBounds = value; return this; },
     setPosition(px, py) { this.x = px; this.y = py; return this; },
@@ -66,7 +67,7 @@ function cameraAdapter() {
   const camera = new EventEmitter();
   Object.assign(camera, {
     scrollX: 0, scrollY: 0, zoom: 1,
-    fadeOut() {},
+    fadeOut() {}, fadeIn() {},
     setBackgroundColor(value) { this.background = value; },
     removeBounds() { this.bounds = undefined; },
     setBounds(x, y, width, height) { this.bounds = { x, y, width, height }; },
@@ -85,14 +86,25 @@ function makeScene(character) {
   const dispatched = [];
   const sounds = [];
   const fishingProgress = { count: 0, unlocked: false };
+  const audioSubscribers = new Set();
+  let storeState = { soundEnabled: true, volume: 0.35, recordFishCatch: () => {
+    fishingProgress.count++;
+    const newlyUnlocked = fishingProgress.count >= 3 && !fishingProgress.unlocked;
+    fishingProgress.unlocked ||= newlyUnlocked;
+    return newlyUnlocked;
+  } };
+  const portfolioStore = {
+    getState: () => storeState,
+    subscribe(fn) { audioSubscribers.add(fn); return () => audioSubscribers.delete(fn); },
+  };
+  const setAudioPreferences = (soundEnabled, volume) => {
+    const previous = storeState;
+    storeState = { ...storeState, soundEnabled, volume };
+    audioSubscribers.forEach((fn) => fn(storeState, previous));
+  };
   const SceneClass = vm.runInNewContext(`${compiled}\nPortfolioScene;`, {
     ...house, ...rest, ...walk, ...geometry, ...world, ...exterior, ...exteriorMap, ...zoom, ...activities, ...movement,
-    usePortfolioStore: { getState: () => ({ recordFishCatch: () => {
-      fishingProgress.count++;
-      const newlyUnlocked = fishingProgress.count >= 3 && !fishingProgress.unlocked;
-      fishingProgress.unlocked ||= newlyUnlocked;
-      return newlyUnlocked;
-    } }) },
+    usePortfolioStore: portfolioStore,
     PLAYER_SIZE: { house: 96, world: 80 }, character,
     buildHouse: () => ({ bedCover: image().setVisible(false) }),
     buildExterior: () => ({ update(elapsed) { this.elapsed = elapsed; }, destroy() {} }),
@@ -111,8 +123,10 @@ function makeScene(character) {
         scale(value) { this.x *= value; this.y *= value; return this; }
       },
     },
+      Scale: { Events: { RESIZE: "resize" } },
+      Scenes: { Events: { POST_UPDATE: "post-update", SHUTDOWN: "shutdown" } },
       Cameras: { Scene2D: { Events: { FADE_OUT_COMPLETE: "fade-out-complete" } } } },
-    window: { dispatchEvent: (event) => dispatched.push(event) },
+    window: { dispatchEvent: (event) => dispatched.push(event), addEventListener() {}, removeEventListener() {} },
     CustomEvent: class { constructor(type, data) { this.type = type; this.detail = data.detail; } },
     Event: class { constructor(type) { this.type = type; } },
     performance,
@@ -124,7 +138,8 @@ function makeScene(character) {
   scene.prompt = image();
   scene.add = { image, text: (x, y, text) => image(x, y).setText(text) };
   scene.physics = { world: { setBounds() {} }, add: { sprite: playerSprite } };
-  scene.scale = { width: 960, height: 600 };
+  scene.scale = Object.assign(new EventEmitter(), { width: 960, height: 600 });
+  scene.events = new EventEmitter();
   scene.cursors = Object.fromEntries(["left", "right", "up", "down"].map((key) => [key, { isDown: false }]));
   scene.keys = Object.fromEntries(["A", "D", "W", "S"].map((key) => [key, { isDown: false }]));
   scene.addHouseLightingEffects = () => {};
@@ -133,6 +148,7 @@ function makeScene(character) {
   scene.fireSprite = image();
   scene.cache = { audio: { exists: () => true } };
   scene.sound = {
+    setMute(value) { this.mute = value; }, setVolume(value) { this.volume = value; },
     add: (key) => ({ play: () => sounds.push(key), destroy() {}, stop() {} }),
     play: (key) => sounds.push(key),
   };
@@ -141,7 +157,7 @@ function makeScene(character) {
   scene.scene = { restart: (data) => destinations.push(data.area) };
   scene.interactions = house.HOUSE_INTERACTIONS.map((interaction) => ({ ...interaction }));
   scene.lastWalkablePosition = { ...house.HOUSE_SPAWN };
-  return { scene, dispatched, sounds, destinations, fishingProgress };
+  return { scene, dispatched, sounds, destinations, fishingProgress, audioSubscribers, setAudioPreferences };
 }
 
 const wakeMessage = "Um novo dia começa neste mundo. Pressione E para levantar.";
@@ -481,3 +497,52 @@ for (const character of ["masculine", "feminine"]) {
   assert.equal(scene.restSprite, undefined);
 }
 console.log(`Production scene methods passed: ${startupCycles} wake-up flows, ${zoomChecks} zoom round trips, ${cycles} poses, ${fishingCycles} fishing cancellations, ${completedCatches} captures, ${diagonalChecks} diagonals, ${observationCycles} observations; one achievement, held-E protection, continuous world time, panels, fire and both doors. GPU/camera/audio playback require the browser.`);
+
+for (const character of ["masculine", "feminine"]) {
+  const { scene, audioSubscribers, setAudioPreferences } = makeScene(character);
+  scene.createCharacterAnimations = () => {};
+  scene.buildArea = () => {};
+  const keyboard = Object.assign(new EventEmitter(), {
+    createCursorKeys: () => scene.cursors,
+    addKeys: () => scene.keys,
+  });
+  scene.input = { keyboard };
+  scene.create();
+  assert.equal(scene.sound.mute, false); assert.equal(scene.sound.volume, 0.35);
+  assert.equal(audioSubscribers.size, 1);
+  setAudioPreferences(false, 0.6);
+  assert.equal(scene.sound.mute, true); assert.equal(scene.sound.volume, 0.6);
+  setAudioPreferences(true, 0);
+  assert.equal(scene.sound.mute, false); assert.equal(scene.sound.volume, 0);
+  scene.events.emit("shutdown");
+  assert.equal(audioSubscribers.size, 0, "Scene shutdown removes audio subscription");
+  setAudioPreferences(false, 0.8);
+  assert.equal(scene.sound.mute, false); assert.equal(scene.sound.volume, 0, "Destroyed scene receives no audio changes");
+}
+console.log("Scene audio passed: initial preferences, live mute/volume changes, silent volume and subscription cleanup for both characters.");
+
+for (const [width, height] of [[320, 568], [390, 844], [1334, 595], [1920, 1080]]) {
+  const { scene } = makeScene("masculine");
+  scene.scale = { width, height };
+  const prompt = image();
+  Object.defineProperties(prompt, {
+    displayWidth: { get: () => (prompt.wrapWidth + 24) * (prompt.scaleX ?? 1) },
+    displayHeight: { get: () => 96 * (prompt.scaleY ?? 1) },
+  });
+  scene.prompt = prompt;
+  for (const zoomValue of [0.3, 0.8, 1.6, 2.8]) {
+    const view = { x: 100, y: 200, width: width / zoomValue, height: height / zoomValue };
+    view.right = view.x + view.width; view.bottom = view.y + view.height;
+    scene.cameras.main.zoom = zoomValue; scene.cameras.main.worldView = view;
+    for (const anchor of [{ x: view.x - 100, y: view.y - 100 }, { x: view.right + 100, y: view.bottom + 100 }]) {
+      scene.showPrompt(anchor.x, anchor.y);
+      assert(Math.abs(prompt.scaleX * zoomValue - 1) < 0.000001, "Prompt font retains its screen size");
+      assert((prompt.x - prompt.displayWidth / 2 - view.x) * zoomValue >= 11.999);
+      assert((view.right - prompt.x - prompt.displayWidth / 2) * zoomValue >= 11.999);
+      assert((prompt.y - prompt.displayHeight - view.y) * zoomValue >= 11.999);
+      assert((view.bottom - prompt.y) * zoomValue >= 11.999);
+      assert.equal(scene.promptAnchor.x, anchor.x, "Clamping must not lose the original world anchor");
+    }
+  }
+}
+console.log("Prompt layout passed: readable screen size and viewport bounds at 4 viewport sizes and 4 camera zooms.");

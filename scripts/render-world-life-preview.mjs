@@ -7,11 +7,13 @@ const atlas = JSON.parse(await readFile("public/game/exterior/objects.json", "ut
 const terrain = await sharp("public/game/exterior/terrain.png").ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 const sprites = new Map();
 const width = 1280, height = 1280;
+const output = process.argv[2] ?? "docs/exterior-art";
 
 // Record the production renderer, including exact atmosphere depth/alpha and
 // sprite dimensions, then rasterize its crisp pixel primitives without Phaser.
-async function render(elapsed, file) {
+async function render(elapsed, file, feet) {
   const draws = [];
+  const generated = new Map();
   let tileData;
   function item(kind, values = {}) {
     const node = {
@@ -19,6 +21,9 @@ async function render(elapsed, file) {
       setDepth(value) { this.depth = value; return this; },
       setName(value) { this.name = value; return this; },
       setOrigin() { return this; },
+      setX(x) { this.x = x; return this; },
+      setCrop(x, y, width, height) { this.crop = { x, y, width, height }; return this; },
+      generateTexture(key) { generated.set(key, this.rects.map((rect) => ({ ...rect, x: rect.x - 160, y: rect.y - 160 }))); return this; },
       setDisplaySize(w, h) { this.width = w; this.height = h; return this; },
       setPosition(x, y) { this.x = x; this.y = y; return this; },
       setAlpha(value) { this.alpha = value; return this; },
@@ -26,20 +31,27 @@ async function render(elapsed, file) {
       setScale() { return this; },
       fillStyle(color, alpha = 1) { this.fill = { color, alpha }; return this; },
       fillRect(x, y, w, h) { this.rects.push({ x, y, width: w, height: h, ...this.fill }); return this; },
-      clear() { this.rects = []; return this; }, destroy() {},
+      clear() { this.rects = []; return this; }, destroy() { this.visible = false; },
     };
     draws.push(node); return node;
   }
   const scene = {
+    cameras: { main: { worldView: { x: 0, y: 0, width, height } } },
+    textures: { exists(key) { return generated.has(key); } },
     make: { tilemap({ data }) { tileData = data; return { addTilesetImage() { return {}; }, createLayer() { return item("ground"); } }; } },
     add: {
-      image(x, y, texture, frame) { return item("sprite", { x, y, frame }); },
+      image(x, y, texture, frameName) {
+        if (generated.has(texture)) return item("graphics", { x, y, rects: generated.get(texture) });
+        const frame = atlas.frames[frameName].frame;
+        return item("sprite", { x, y, frameName, frame: { width: frame.w, height: frame.h } });
+      },
       graphics() { return item("graphics"); },
       rectangle(x, y, w, h, color) { return item("rectangle", { x, y, width: w, height: h, color }); },
     },
     events: { once() {}, off() {} },
   };
-  buildExterior(scene).update(elapsed);
+  const view = buildExterior(scene);
+  view.update(elapsed, feet);
   const data = Buffer.alloc(width * height * 4);
   const blend = (x, y, color, alpha) => {
     if (x < 0 || y < 0 || x >= width || y >= height || alpha <= 0) return;
@@ -63,24 +75,55 @@ async function render(elapsed, file) {
         }
       }));
     } else if (node.kind === "sprite") {
-      const key = `${node.frame}-${node.width}-${node.height}`;
+      const key = `${node.frameName}-${node.width}-${node.height}`;
       if (!sprites.has(key)) {
-        const frame = atlas.frames[node.frame].frame;
+        const frame = atlas.frames[node.frameName].frame;
         sprites.set(key, await sharp("public/game/exterior/objects.png").extract({ left: frame.x, top: frame.y, width: frame.w, height: frame.h })
           .resize(node.width, node.height, { kernel: "nearest" }).ensureAlpha().raw().toBuffer());
       }
       const source = sprites.get(key);
       for (let y = 0; y < node.height; y++) for (let x = 0; x < node.width; x++) {
+        if (node.crop) {
+          const sx = x * node.frame.width / node.width, sy = y * node.frame.height / node.height;
+          if (sx < node.crop.x || sx >= node.crop.x + node.crop.width || sy < node.crop.y || sy >= node.crop.y + node.crop.height) continue;
+        }
         const p = (y * node.width + x) * 4;
         blend(Math.round(node.x - node.width / 2 + x), Math.round(node.y - node.height + y), (source[p] << 16) | (source[p + 1] << 8) | source[p + 2], source[p + 3] / 255);
       }
     } else if (node.kind === "rectangle") fill({ x: -node.width / 2, y: -node.height / 2, width: node.width, height: node.height, color: node.color, alpha: 1 }, node);
     else node.rects.forEach((rect) => fill(rect, node));
   }
-  await sharp(data, { raw: { width, height, channels: 4 } }).png().toFile(file);
+  if (file) await sharp(data, { raw: { width, height, channels: 4 } }).png().toFile(file);
+  view.destroy();
+  return data;
 }
-await mkdir("docs/exterior-art", { recursive: true });
-await render(24_000, "docs/exterior-art/day-preview.png");
-await render(168_000, "docs/exterior-art/night-preview.png");
-await sharp("docs/exterior-art/day-preview.png").extract({ left: 480, top: 48, width: 320, height: 304 }).resize(640, 608, { kernel: "nearest" }).toFile("docs/exterior-art/projects-preview.png");
+await mkdir(output, { recursive: true });
+await render(24_000, `${output}/day-preview.png`);
+await render(168_000, `${output}/night-preview.png`);
+await sharp(`${output}/day-preview.png`).extract({ left: 480, top: 48, width: 320, height: 304 }).resize(640, 608, { kernel: "nearest" }).toFile(`${output}/projects-preview.png`);
 console.log("Rendered day, night and Projects chest directly from production exterior + atmosphere draw calls.");
+
+if (process.argv.includes("--motion")) {
+  const { EXTERIOR_OBJECTS } = loadTypeScript("components/portfolio/game/exterior-map.ts");
+  const tree = EXTERIOR_OBJECTS.find(({ kind, x, y }) => kind === "oak" && x > 80 && x < 1200 && y > 144 && y < 1160);
+  const originalRandom = Math.random;
+  Math.random = () => 0.42; // Stable scene seed across recorded animation frames.
+  try {
+    for (const [period, base] of [["day", 24000], ["night", 168000]]) {
+      const lakeFrames = [], foliageFrames = [];
+      for (let frame = 0; frame < 32; frame++) {
+        const feet = { x: tree.x + (frame < 16 ? 28 : 200), y: tree.y - 12 };
+        const data = await render(base + frame * 100, undefined, feet);
+        lakeFrames.push(await sharp(data, { raw: { width, height, channels: 4 } })
+          .extract({ left: 920, top: 744, width: 320, height: 256 }).raw().toBuffer());
+        foliageFrames.push(await sharp(data, { raw: { width, height, channels: 4 } })
+          .extract({ left: Math.round(tree.x - 96), top: Math.round(tree.y - 144), width: 192, height: 176 }).raw().toBuffer());
+      }
+      for (const [name, frames, w, h] of [["lake", lakeFrames, 320, 256], ["foliage", foliageFrames, 192, 176]]) {
+        await sharp(Buffer.concat(frames), { raw: { width: w, height: h * frames.length, channels: 4, pageHeight: h } })
+          .webp({ lossless: true, loop: 0, delay: 100 }).toFile(`${output}/${name}-${period}.webp`);
+      }
+    }
+  } finally { Math.random = originalRandom; }
+  console.log("Rendered reproducible animated lake and foliage previews, day/night; proximity ends halfway through foliage loops.");
+}

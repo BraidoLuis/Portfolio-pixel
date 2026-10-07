@@ -97,7 +97,7 @@ export function WorldMinimap() {
   }, []);
 
   return (
-    <div className="relative mx-auto mt-5 w-full max-w-[360px] overflow-hidden border-[4px] border-[#875132] bg-[#497343] shadow-[4px_4px_0_#4b2b22]">
+    <div className="relative mx-auto mt-5 w-full max-w-[440px] overflow-hidden border-[4px] border-[#875132] bg-[#497343] shadow-[4px_4px_0_#4b2b22]">
       <canvas
         ref={canvasRef}
         width={mapWidth * PREVIEW_SCALE}
@@ -112,14 +112,14 @@ export function WorldMinimap() {
         <span
           key={marker.id}
           aria-label={`${marker.number} · ${marker.label}`}
-          className="absolute flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-[#fff0b6] bg-[#542b1b] text-sm font-black text-[#fff0b6] shadow-[2px_2px_0_#32180f]"
+          className="absolute flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 border-[#fff0b6] bg-[#542b1b] text-[1.125rem] font-black text-[#fff0b6] shadow-[2px_2px_0_#32180f]"
           style={{ left: `${marker.x / mapWidth * 100}%`, top: `${marker.y / mapHeight * 100}%` }}
         >
           {marker.number}
         </span>
       ))}
       {failed && (
-        <p role="status" className="absolute inset-x-2 bottom-2 border-2 border-[#875132] bg-[#f6d99c] p-2 text-sm">
+        <p role="status" className="absolute inset-x-2 bottom-2 border-2 border-[#875132] bg-[#f6d99c] p-2 text-[1.125rem]">
           A imagem do mapa não carregou. Use as direções da legenda abaixo.
         </p>
       )}
