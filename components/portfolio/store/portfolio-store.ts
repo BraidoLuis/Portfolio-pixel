@@ -60,7 +60,11 @@ export const usePortfolioStore = create<PortfolioStore>()(
         return unlocked;
       },
       setCharacter: (character) => set({ character }),
-      startGame: () => set({ started: true, activePanel: null }),
+      startGame: () => set((state) => ({
+        started: true,
+        activePanel: "intro",
+        discovered: state.discovered.includes("intro") ? state.discovered : [...state.discovered, "intro"],
+      })),
       returnToMenu: () => set({ started: false, activePanel: null }),
       openPanel: (panel) =>
         set((state) => ({

@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "assets:exterior": "node scripts/build-exterior-assets.mjs",
-    "check:world": "node scripts/check-exterior.mjs && node scripts/check-exterior-terrain.mjs && node scripts/check-world-activities.mjs && node scripts/check-world-life.mjs && node scripts/check-exterior-life.mjs",
+    "check:world": "node scripts/check-exterior.mjs && node scripts/check-exterior-terrain.mjs && node scripts/check-world-activities.mjs && node scripts/check-world-life.mjs && node scripts/check-exterior-life.mjs && node scripts/check-environment-encounters.mjs",
     "assets:interior": "node scripts/build-interior-assets.mjs",
     "check:house": "node scripts/check-house.mjs && node scripts/check-house-scene.mjs && node scripts/check-fishing-achievement.mjs",
     "preview:house": "node scripts/render-interior-preview.mjs",

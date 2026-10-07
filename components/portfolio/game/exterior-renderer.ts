@@ -4,6 +4,7 @@ import { EXTERIOR_TILE_SOURCE_SIZE, getExteriorTileFrame } from "./exterior-art"
 import { EXTERIOR_OBJECTS, EXTERIOR_TILES, TILE_SIZE } from "./exterior-map";
 import { createExteriorAtmosphere } from "./exterior-atmosphere";
 import { createExteriorLife, type FoliagePart } from "./exterior-life-renderer";
+import { createEnvironmentEncounters } from "./environment-encounters-renderer";
 
 export type ExteriorView = { update: (elapsedMs: number, feet?: Position) => void; destroy: () => void };
 
@@ -12,7 +13,7 @@ export function preloadExterior(scene: Scene) {
   scene.load.atlas("exterior-objects", "/game/exterior/objects.png", "/game/exterior/objects.json");
 }
 
-export function buildExterior(scene: Scene): ExteriorView {
+export function buildExterior(scene: Scene, onLeafRustle?: () => void): ExteriorView {
   const data = EXTERIOR_TILES.map((row, y) => row.map((kind, x) => getExteriorTileFrame(kind, x, y)));
   const map = scene.make.tilemap({ data, tileWidth: EXTERIOR_TILE_SOURCE_SIZE, tileHeight: EXTERIOR_TILE_SOURCE_SIZE });
   const tileset = map.addTilesetImage("exterior-terrain");
@@ -38,6 +39,7 @@ export function buildExterior(scene: Scene): ExteriorView {
   }
   const atmosphere = createExteriorAtmosphere(scene);
   const life = createExteriorLife(scene, foliage);
+  const encounters = createEnvironmentEncounters(scene, onLeafRustle);
   const preference = typeof window === "undefined" ? undefined : window.matchMedia("(prefers-reduced-motion: reduce)");
   let reducedMotion = preference?.matches ?? false;
   const onPreferenceChange = (event: MediaQueryListEvent) => { reducedMotion = event.matches; };
@@ -55,6 +57,7 @@ export function buildExterior(scene: Scene): ExteriorView {
       previousReduced = reducedMotion;
     }
     life.update(elapsedMs, feet, reducedMotion, view);
+    encounters.update(elapsedMs, feet, reducedMotion, view);
   };
   const destroy = () => {
     if (destroyed) return;
@@ -63,6 +66,7 @@ export function buildExterior(scene: Scene): ExteriorView {
     scene.events.off("shutdown", destroy);
     atmosphere.destroy();
     life.destroy();
+    encounters.destroy();
   };
   scene.events.once("shutdown", destroy);
   return { update, destroy };

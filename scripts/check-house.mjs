@@ -9,6 +9,8 @@ const {
   HOUSE_TILES, HOUSE_COLUMNS, HOUSE_ROWS, HOUSE_TILE_SIZE, HOUSE_PLAYER_SIZE,
   HOUSE_OBJECTS, HOUSE_INTERACTIONS, HOUSE_REST_SPOTS, HOUSE_MARKER, HOUSE_SPAWN,
 } = loadTypeScript("components/portfolio/game/house-map.ts");
+const { HOUSE_OBSERVATIONS } = loadTypeScript("components/portfolio/game/house-observations.ts");
+const allInteractions = [...HOUSE_INTERACTIONS, ...HOUSE_OBSERVATIONS];
 const { canOccupyHouse, chooseFreeHouseExit } = loadTypeScript("components/portfolio/game/house-walkability.ts");
 const { PLAYER_FOOTPRINT, moveAlongWalkablePath } = loadTypeScript("components/portfolio/game/collision-geometry.ts");
 const { InteractionPressGate, HouseRestController, getRestPoseFrame, getTutorialMarkerY } = loadTypeScript("components/portfolio/game/house-rest.ts");
@@ -51,7 +53,7 @@ assert(queue.length > 4000, `Unexpectedly little open floor is reachable: ${queu
 const nearestInteraction = (position) => {
   let nearest = null;
   let best = Infinity;
-  for (const interaction of HOUSE_INTERACTIONS) {
+  for (const interaction of allInteractions) {
     const distance = Math.hypot(position.x - interaction.x, position.y - interaction.y);
     if (distance < interaction.radius && distance < best) {
       nearest = interaction;
@@ -69,9 +71,9 @@ const pathTo = (node) => {
   return route.reverse();
 };
 const routes = [];
-assert.equal(HOUSE_INTERACTIONS.length, 7, "Preserve the four existing interactions and add only two chairs and bed");
+assert.equal(HOUSE_INTERACTIONS.length, 7, "Preserve the original seven house actions");
 assert(!HOUSE_OBJECTS.some((object) => object.id.startsWith("lamp")), "No lamps should be added to this room");
-for (const interaction of HOUSE_INTERACTIONS) {
+for (const interaction of allInteractions) {
   assert(HOUSE_OBJECTS.some((object) => object.id === interaction.objectId), `Missing interaction sprite: ${interaction.id}`);
   const approaches = queue.filter((node) => nearestInteraction(node) === interaction);
   assert(approaches.length >= 3, `No comfortable reachable prompt for ${interaction.id}`);
@@ -206,6 +208,6 @@ for (const frame of requiredPoseFrames) {
 
 mkdirSync(path.join(projectRoot, "work"), { recursive: true });
 writeFileSync(path.join(projectRoot, "work/house-routes.json"), JSON.stringify({ step, reachableSamples: queue.length, routes }, null, 2));
-console.log(`House checks passed: ${queue.length} reachable full-footprint samples; ${HOUSE_INTERACTIONS.length} interactions; ${solids.length} solid furniture pieces; ${barriers} long-movement barriers; ${restCycles} rest cycles for both characters.`);
+console.log(`House checks passed: ${queue.length} reachable full-footprint samples; ${allInteractions.length} interactions; ${solids.length} solid furniture pieces; ${barriers} long-movement barriers; ${restCycles} rest cycles for both characters.`);
 console.log("Input repeat protection and tutorial marker curve passed. Routes: work/house-routes.json");
 console.log("Phaser rendering, physics disabling during rest, camera, audio and browser transitions still need live-game verification.");
