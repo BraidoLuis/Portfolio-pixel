@@ -16,6 +16,8 @@ import {
 import { canOccupyWorld } from "@/components/portfolio/game/world-walkability";
 import { buildExterior, preloadExterior, type ExteriorView } from "./exterior-renderer";
 import { WORLD_INTERACTIONS } from "./exterior-map";
+import { HOUSE_OBSERVATIONS } from "./house-observations";
+import { createInteractionHighlight, type InteractionHighlight } from "./interaction-highlight";
 import { buildHouse, preloadHouse, type HouseView } from "./house-renderer";
 import { HOUSE_INTERACTIONS, HOUSE_LIGHTS, HOUSE_MARKER, HOUSE_PLAYER_SIZE, type HouseInteraction, type HouseRestId } from "./house-map";
 import { canOccupyHouse } from "./house-walkability";
@@ -35,6 +37,7 @@ type Facing = CharacterFacing;
 const PLAYER_SIZE = { house: HOUSE_PLAYER_SIZE, world: WORLD_PLAYER_SIZE } as const;
 
 type Interaction = {
+  objectId?: string;
   x: number;
   y: number;
   radius: number;
@@ -87,6 +90,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private fireTexture?: import("phaser").Textures.CanvasTexture;
         private houseView?: HouseView;
         private exteriorView?: ExteriorView;
+        private interactionHighlight?: InteractionHighlight;
         private unsubscribeAudio?: () => void;
         // A scene restart through either door must never reset the world clock.
         private worldTimeStartedAt = performance.now();
@@ -95,7 +99,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
         private fishing = new FishingController();
         private fishingView?: FishingView;
         private fishingStartedAt = 0;
-        private observation?: { text: string; x: number; y: number; expires: number };
+        private observation?: { text: string; x: number; y: number; radius: number; expires: number };
         private restSprite?: import("phaser").GameObjects.Image;
         private interactionGate = new InteractionPressGate();
         private lastFootstepAt = 0;
@@ -130,6 +134,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
         };
         private onPanelState = (event: Event) => {
           this.pausedByPanel = (event as CustomEvent<{ paused: boolean }>).detail.paused;
+          this.updateHighlight();
         };
         private onZoomRequest = (event: Event) => {
           const direction = (event as CustomEvent<{ direction: "in" | "out" }>).detail?.direction;
@@ -175,6 +180,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.restSprite = undefined;
           this.houseView = undefined;
           this.exteriorView = undefined;
+          this.interactionHighlight = undefined;
           this.fireSprite = undefined;
           this.fireGlow = undefined;
           this.fireTexture = undefined;
@@ -260,6 +266,9 @@ export function PhaserGame({ character }: PhaserGameProps) {
           });
           this.createCharacterAnimations();
           this.buildArea();
+          // The guide may open before Phaser finishes loading and installs listeners.
+          this.pausedByPanel = Boolean(usePortfolioStore.getState().activePanel);
+          this.updateHighlight();
           this.cursors = this.input.keyboard!.createCursorKeys();
           this.keys = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.keys;
           this.input.keyboard!.on("keydown-E", this.onKeyboardInteract);
@@ -407,7 +416,11 @@ export function PhaserGame({ character }: PhaserGameProps) {
             this.houseView = buildHouse(this);
             this.addHouseLightingEffects();
           } else {
-            this.exteriorView = buildExterior(this);
+            this.exteriorView = buildExterior(this, () => {
+              if (this.cache.audio.exists("step-grass-02")) {
+                this.sound.play("step-grass-02", { volume: 0.055, rate: 0.85 });
+              }
+            });
             this.exteriorView.update(this.worldElapsedMs());
           }
 
@@ -434,9 +447,10 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.configureCamera();
 
           this.interactions = isHouse
-            ? HOUSE_INTERACTIONS.map((interaction) => ({ ...interaction }))
+            ? [...HOUSE_INTERACTIONS, ...HOUSE_OBSERVATIONS].map((interaction) => ({ ...interaction }))
             : [...WORLD_INTERACTIONS, ...WORLD_ACTIVITIES];
 
+          this.interactionHighlight = createInteractionHighlight(this, this.area);
           this.prompt = this.add
             .text(0, 0, "", {
               fontFamily: "Stardew Valley",
@@ -663,7 +677,8 @@ export function PhaserGame({ character }: PhaserGameProps) {
           if (!interaction.response) return;
           this.observation = {
             text: interaction.response, x: interaction.x, y: interaction.y,
-            expires: this.time.now + 3600,
+            radius: Math.max(110, interaction.radius + 24),
+            expires: this.time.now + (this.area === "house" ? 6000 : 3600),
           };
           this.updateInteraction();
         }
@@ -732,6 +747,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
 
         update() {
           this.fitPromptToCamera();
+          this.updateHighlight();
           this.exteriorView?.update(this.worldElapsedMs(), this.player ? {
             x: this.player.x,
             y: this.player.y + PLAYER_SIZE.world * (PLAYER_FOOTPRINT.offsetY + PLAYER_FOOTPRINT.height / 2 - 0.5),
@@ -786,7 +802,13 @@ export function PhaserGame({ character }: PhaserGameProps) {
           }
         }
 
+        private updateHighlight() {
+          this.interactionHighlight?.update(!this.pausedByPanel && !this.transitioning &&
+            !this.rest.current && !this.fishing.current ? this.nearest?.objectId : undefined);
+        }
+
         private updateInteraction() {
+          this.updateHighlight();
           const fishing = this.fishing.current;
           if (fishing) {
             const messages = {
@@ -819,9 +841,10 @@ export function PhaserGame({ character }: PhaserGameProps) {
             }
           }
           this.nearest = nearest;
+          this.updateHighlight();
           if (this.observation) {
-            const { x, y, text, expires } = this.observation;
-            if (this.time.now < expires && Math.hypot(this.player.x - x, this.player.y - y) < 110) {
+            const { x, y, text, radius, expires } = this.observation;
+            if (this.time.now < expires && Math.hypot(this.player.x - x, this.player.y - y) < radius) {
               this.prompt.setText(text);
               this.showPrompt(x, y - 40);
               return;
@@ -916,6 +939,11 @@ export function PhaserGame({ character }: PhaserGameProps) {
             return;
           }
 
+          if (this.nearest.response) {
+            this.observeWorld(this.nearest);
+            return;
+          }
+
           if (this.nearest.restId) {
             this.enterRest(this.nearest.restId);
             return;
@@ -946,6 +974,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           if (this.transitioning) return;
           this.transitioning = true;
           this.pausedByPanel = true;
+          this.updateHighlight();
           this.cameras.main.fadeOut(180, 20, 12, 8);
           this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
             this.scene.restart({ area: destination });
@@ -965,6 +994,7 @@ export function PhaserGame({ character }: PhaserGameProps) {
           this.rest.reset();
           this.fishingView?.destroy();
           this.exteriorView?.destroy();
+          this.interactionHighlight?.destroy();
           this.fishing.reset();
           window.dispatchEvent(new CustomEvent("portfolio:fishing-state", { detail: { active: false } }));
           this.interactionGate.reset();

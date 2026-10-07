@@ -18,6 +18,7 @@ assert(sceneClass, "The production PortfolioScene must be tested");
 const compiled = ts.transpileModule(sceneClass.getText(source), { compilerOptions: { target: ts.ScriptTarget.ES2020 } }).outputText;
 const house = loadTypeScript("components/portfolio/game/house-map.ts");
 const rest = loadTypeScript("components/portfolio/game/house-rest.ts");
+const observations = loadTypeScript("components/portfolio/game/house-observations.ts");
 const walk = loadTypeScript("components/portfolio/game/house-walkability.ts");
 const geometry = loadTypeScript("components/portfolio/game/collision-geometry.ts");
 const world = loadTypeScript("components/portfolio/game/world-config.ts");
@@ -82,12 +83,12 @@ function cameraAdapter() {
   return camera;
 }
 
-function makeScene(character) {
+function makeScene(character, activePanel = null) {
   const dispatched = [];
   const sounds = [];
   const fishingProgress = { count: 0, unlocked: false };
   const audioSubscribers = new Set();
-  let storeState = { soundEnabled: true, volume: 0.35, recordFishCatch: () => {
+  let storeState = { activePanel, soundEnabled: true, volume: 0.35, recordFishCatch: () => {
     fishingProgress.count++;
     const newlyUnlocked = fishingProgress.count >= 3 && !fishingProgress.unlocked;
     fishingProgress.unlocked ||= newlyUnlocked;
@@ -103,9 +104,10 @@ function makeScene(character) {
     audioSubscribers.forEach((fn) => fn(storeState, previous));
   };
   const SceneClass = vm.runInNewContext(`${compiled}\nPortfolioScene;`, {
-    ...house, ...rest, ...walk, ...geometry, ...world, ...exterior, ...exteriorMap, ...zoom, ...activities, ...movement,
+    ...house, ...observations, ...rest, ...walk, ...geometry, ...world, ...exterior, ...exteriorMap, ...zoom, ...activities, ...movement,
     usePortfolioStore: portfolioStore,
     PLAYER_SIZE: { house: 96, world: 80 }, character,
+    createInteractionHighlight: () => ({ update(objectId) { this.objectId = objectId; }, destroy() { this.destroyed = true; } }),
     buildHouse: () => ({ bedCover: image().setVisible(false) }),
     buildExterior: () => ({ update(elapsed) { this.elapsed = elapsed; }, destroy() {} }),
     createFishingView: (_scene, spot) => ({
@@ -546,3 +548,80 @@ for (const [width, height] of [[320, 568], [390, 844], [1334, 595], [1920, 1080]
   }
 }
 console.log("Prompt layout passed: readable screen size and viewport bounds at 4 viewport sizes and 4 camera zooms.");
+
+// The new observations use the real E flow and leave the character free.
+for (const character of ["masculine", "feminine"]) {
+  for (const note of observations.HOUSE_OBSERVATIONS) {
+    const { scene, dispatched, sounds } = makeScene(character);
+    scene.buildArea();
+    let approach;
+    for (let y = note.y - note.radius; y <= note.y + note.radius && !approach; y += 8) {
+      for (let x = note.x - note.radius; x <= note.x + note.radius && !approach; x += 8) {
+        if (!walk.canOccupyHouse({ x, y })) continue;
+        scene.player.setPosition(x, y);
+        scene.updateInteraction();
+        if (scene.nearest?.id === note.id) approach = { x, y };
+      }
+    }
+    assert(approach, "House detail must have a valid standing approach: " + note.id);
+    assert.equal(scene.interactionHighlight.objectId, note.objectId);
+    const eventsBefore = dispatched.length;
+    scene.onMobileInteract();
+    assert.equal(scene.observation.text, note.response);
+    assert.equal(scene.prompt.text, note.response);
+    assert.equal(sounds.at(-1), "ui-select");
+    assert.equal(dispatched.length, eventsBefore);
+    assert.equal(scene.player.body.enable, true);
+    scene.keys.D.isDown = true;
+    scene.update();
+    assert.equal(scene.player.velocity.x, 190);
+    scene.time.now += 6001;
+    scene.updateInteraction();
+    assert.equal(scene.observation, undefined);
+    scene.player.setPosition(house.HOUSE_SPAWN.x, house.HOUSE_SPAWN.y);
+    scene.updateInteraction();
+    assert.equal(scene.interactionHighlight.objectId, undefined);
+    scene.nearest = { objectId: "tutorial" };
+    scene.onPanelState({ detail: { paused: true } });
+    assert.equal(scene.interactionHighlight.objectId, undefined);
+  }
+}
+console.log("House details passed: both characters, accessible targets, touch interaction, audio mapping, reading timeout, free movement and paused highlights.");
+
+for (const character of ["masculine", "feminine"]) {
+  const { scene } = makeScene(character, "intro");
+  scene.init();
+  scene.createCharacterAnimations = () => {};
+  scene.input = { keyboard: Object.assign(new EventEmitter(), {
+    createCursorKeys: () => scene.cursors, addKeys: () => scene.keys,
+  }) };
+  scene.create();
+  assert.equal(scene.pausedByPanel, true, "A guide opened before Phaser loads must pause the initial scene");
+  assert.equal(scene.rest.current.id, "bed");
+  scene.onKeyboardInteract({ code: "KeyE", repeat: false });
+  assert.equal(scene.rest.current.id, "bed", "E in the guide cannot wake the player behind it");
+  scene.onKeyboardRelease({ code: "KeyE" });
+  scene.onPanelState({ detail: { paused: false } });
+  scene.time.now += 500;
+  scene.onKeyboardInteract({ code: "KeyE", repeat: false });
+  assert.equal(scene.rest.current, null, "Closing the guide restores the existing wake-up interaction");
+  scene.cleanupListeners();
+
+  for (const position of [{ x: 80, y: 768 }, { x: 216, y: 776 }, { x: 144, y: 816 }, { x: 144, y: 704 }]) {
+    const { scene } = makeScene(character);
+    scene.buildArea();
+    assert(walk.canOccupyHouse(position), "Plant approaches must stay on walkable floor");
+    scene.player.setPosition(position.x, position.y);
+    scene.updateInteraction();
+    assert.equal(scene.nearest.id, "care-for-plant", "Plant should be examinable from either side, front and back");
+    scene.onMobileInteract();
+    assert.equal(scene.observation.text, observations.HOUSE_OBSERVATIONS.find(({ id }) => id === "care-for-plant").response);
+    scene.player.setPosition(260, 808);
+    scene.updateInteraction();
+    assert(scene.observation, "Small steps beyond the activation radius should not erase the message");
+    scene.player.setPosition(288, 808);
+    scene.updateInteraction();
+    assert.equal(scene.observation, undefined, "The message disappears when walking away");
+  }
+}
+console.log("Startup guide and plant range passed: initial panel pause, closing/waking up, both characters, four unobstructed approaches and message retention while stepping nearby.");
