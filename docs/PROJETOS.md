@@ -13,11 +13,22 @@ Acrescente um objeto à lista `projects`, usando identificadores únicos:
   slug: "meu-novo-projeto",
   title: "Meu novo projeto",
   summary: "Uma descrição curta do que o projeto faz.",
+  category: "Aplicações web",
   problem: "Qual problema o projeto resolve.",
   solution: "Como desenvolvi a solução e qual foi minha participação.",
   role: "Desenvolvedor Full Stack",
   technologies: ["Next.js", "TypeScript", "Tailwind CSS"],
   features: ["Funcionalidade 1", "Funcionalidade 2"],
+  backend: ["Dados, API, autenticação e controle de acesso confirmados."],
+  integrations: [],
+  deployment: null,
+  development_stage: "Protótipo",
+  limitations: ["Liste recursos planejados ou parcialmente implementados."],
+  testing: {
+    suites: [],
+    description: "Não foi identificada uma suíte automatizada.",
+    verified_on: "2026-10-14",
+  },
   live_url: "https://meu-projeto.example",
   repository_url: "https://github.com/BraidoLuis/meu-novo-projeto",
   thumbnail_url: null,
@@ -56,9 +67,20 @@ Use valores diferentes em `display_order` quando precisar de uma sequência exat
 Para excluir, remova o objeto da lista. Uma lista vazia exibe uma mensagem de
 ausência de projetos, sem carregamento infinito ou uso de dados de exemplo.
 
-O layout atual mostra título, resumo, solução, função, tecnologias, capa e links.
-`problem`, `features` e `featured` foram mantidos para preservar a estrutura dos
-seus registros; ainda não alteram a apresentação do card.
+Os cards mostram título, categoria, resumo, maturidade, tecnologias, capa, links
+e indicadores de testes/scripts. **Ver detalhes** abre problema, solução,
+participação, funcionalidades, backend, integrações, deploy, testes e limitações
+no mesmo baú. Ao voltar, filtros, página, rolagem e foco são preservados.
+
+A busca considera nome, resumo, categoria e tecnologias, sem diferenciar acentos
+ou maiúsculas. Os filtros de categoria e destaques podem ser combinados. Itens
+em destaque aparecem primeiro; `display_order` ordena dentro de cada grupo.
+
+Em `testing.suites`, use `kind: "tests"` para casos e `kind: "scripts"` para
+scripts de verificação. A quantidade conta definições, expandindo parametrizações
+e loops que registram casos; não some asserções nem execuções por navegador.
+Informe aprovação e cobertura somente com evidência. Veja
+[a auditoria do catálogo](AUDITORIA-CONTEUDO.md) para fontes e revisões atuais.
 
 ## Validar e publicar
 
