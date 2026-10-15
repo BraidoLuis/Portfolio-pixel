@@ -42,7 +42,7 @@ npm run start
 | O que mudar | Arquivo ou pasta |
 | --- | --- |
 | Adicionar, editar, ocultar ou reordenar projetos | `content/projects.ts` |
-| Habilidades e experiências | `content/portfolio.ts` |
+| Habilidades, experiências e certificações | `content/portfolio.ts` |
 | GitHub, LinkedIn e caminho da música | `content/site.ts` |
 | Capas dos projetos | `public/projects/` |
 | Apresentação, título e seleção de personagem | `components/portfolio/menu/start-screen.tsx` |
@@ -54,6 +54,16 @@ npm run start
 
 Consulte [docs/PROJETOS.md](docs/PROJETOS.md) para cadastrar um projeto e
 [docs/CUSTOMIZACAO.md](docs/CUSTOMIZACAO.md) para alterar o jogo.
+
+O baú reúne 24 projetos, com busca, categorias, destaques e detalhes de
+funcionalidades, backend, integrações e testes. Fontes, contagens e pendências
+de acesso estão em [docs/AUDITORIA-CONTEUDO.md](docs/AUDITORIA-CONTEUDO.md).
+
+Habilidades têm exemplos e projetos vinculados pelos IDs do catálogo; os detalhes
+abrem no próprio baú, com retorno ao ponto de leitura. Experiências profissionais,
+pesquisa e formação são apresentadas separadamente. Em `content/portfolio.ts`, use
+`relatedProjects` para IDs de projetos e `relatedCertifications` para IDs das
+certificações. Docker, Linux e nuvem permanecem sinalizados como estudos.
 
 ## Estrutura
 

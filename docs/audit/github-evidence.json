@@ -1,0 +1,605 @@
+{
+  "verified_on": "2026-10-14",
+  "inventory": {
+    "page_size": 100,
+    "pages": [
+      {
+        "page": 1,
+        "count": 24
+      },
+      {
+        "page": 2,
+        "count": 0
+      }
+    ],
+    "visibility": "public"
+  },
+  "repositories": [
+    {
+      "name": "BraidoLuis",
+      "branch": "main",
+      "commit": "6ec7b196be0335619d0cebf4d2c342b270cf25d0",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "ByLearnJornadaPhytonFaixaPreta",
+      "branch": "main",
+      "commit": "49c5f8c13d3c580111d9ae3a58d710f3fb066fab",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "estudos-yolo",
+      "branch": "main",
+      "commit": "278049b6d4eb678c69163858d138cfdd917515ae",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "FriBolos",
+      "branch": "main",
+      "commit": "5928f726bed51ce58fc772197bd679fa6e4a098f",
+      "fork": false,
+      "homepage": "https://fri-bolos.vercel.app"
+    },
+    {
+      "name": "Lista-Prolog",
+      "branch": "main",
+      "commit": "57f1f363309562d409e85eac05f16e00e845bd88",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Listas-Prog",
+      "branch": "main",
+      "commit": "e36210e17f70660ffd25c2bb637807ac43da5a34",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "lp-namoro",
+      "branch": "main",
+      "commit": "47eedc27fba9d4f55ff947173f34e03888cf3ff7",
+      "fork": false,
+      "homepage": "https://lp-namoro.vercel.app"
+    },
+    {
+      "name": "NB-Arquitetura",
+      "branch": "main",
+      "commit": "882ad91fb8dd33fbb62e64f9fa58c1565e4cd13f",
+      "fork": false,
+      "homepage": "https://nb-arquitetura.vercel.app"
+    },
+    {
+      "name": "orcamento",
+      "branch": "main",
+      "commit": "6bc0ba289cabef3037f87c16cc04a8dcf35757c4",
+      "fork": true,
+      "homepage": null
+    },
+    {
+      "name": "Portfolio-pixel",
+      "branch": "main",
+      "commit": "9350f3407d71481f6f36d334f839569f7c5dafeb",
+      "fork": false,
+      "homepage": "https://portfolio-pixel-theta.vercel.app"
+    },
+    {
+      "name": "principios-engenharia-software",
+      "branch": "main",
+      "commit": "bd5e95b7a49fb8d3de87e23102f2dc4bbbb26e60",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "ProjetoTransformacaoBJJ",
+      "branch": "main",
+      "commit": "649cc2124709e25b945b0bb91bd08a0ae6bbc340",
+      "fork": false,
+      "homepage": "https://projeto-transformacao-bjj-rust.vercel.app"
+    },
+    {
+      "name": "RPG-Using-Python",
+      "branch": "main",
+      "commit": "290290f8b11e87447705aa96a974fcf8c0454c96",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Site_SPE",
+      "branch": "main",
+      "commit": "1327d08818132243a368c844a90817db1507f9e5",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "SPA-express-cambucas",
+      "branch": "main",
+      "commit": "ad472107fb2c5213ac3b47bdf500d8fbb9614947",
+      "fork": false,
+      "homepage": "https://spa-express-cambucas.vercel.app"
+    },
+    {
+      "name": "TCC-YOLO",
+      "branch": "main",
+      "commit": "56d4ae2ba77574bb5cf07f4e0411a6afcbd2b3e1",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "teste-front-vmb",
+      "branch": "main",
+      "commit": "c456693912d5c94a5ab7a5b56fcfb9486956f950",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Trab-PAA",
+      "branch": "main",
+      "commit": "8e4dabe8c225c01067c630cbd2a711562bddf667",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Trab-Robotica",
+      "branch": "main",
+      "commit": "18dd1f6d49a9c088aa25a04d36cb6a3acb4db89c",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Trab-topicos-especiais-em-linguagens-de-programacao",
+      "branch": "main",
+      "commit": "f265481bb58eae3c4e4ed59d34c4b1c1681ac50b",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Trab_Calculo_Numerico",
+      "branch": "main",
+      "commit": "ebfc27a306960210b7bde354e6ed87ee060fe93a",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "Treinamento-Serra-JR",
+      "branch": "main",
+      "commit": "a4cb93c69d8d12a254fb8556b31debc027c0fd83",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "visao_computacional",
+      "branch": "master",
+      "commit": "39436e0b06e2b9d6e26d6db72dd13bcab678c1c1",
+      "fork": false,
+      "homepage": null
+    },
+    {
+      "name": "whatsapp-dashboard",
+      "branch": "main",
+      "commit": "0942ada3bdfa830dc3c84a7db2035cb6abbe2238",
+      "fork": false,
+      "homepage": null
+    }
+  ],
+  "test_definitions": {
+    "SPA-express-cambucas": [
+      {
+        "file": "app/api/admin/appointments/route.test.ts",
+        "count": 29
+      },
+      {
+        "file": "app/api/appointments/cancellation-rules/route.test.ts",
+        "count": 27
+      },
+      {
+        "file": "app/api/cron/appointment-reminders/route.test.ts",
+        "count": 19
+      },
+      {
+        "file": "app/api/cron/media-cleanup/route.test.ts",
+        "count": 38
+      },
+      {
+        "file": "app/api/notifications/appointment/route.test.ts",
+        "count": 6
+      },
+      {
+        "file": "app/auth/callback/route.test.ts",
+        "count": 6
+      },
+      {
+        "file": "app/lib/appointment-duration.test.ts",
+        "count": 10
+      },
+      {
+        "file": "app/lib/appointment-whatsapp.test.ts",
+        "count": 8
+      },
+      {
+        "file": "app/lib/booking-calendar.test.ts",
+        "count": 17
+      },
+      {
+        "file": "app/lib/booking-requests.test.ts",
+        "count": 10
+      },
+      {
+        "file": "app/lib/cancellation-rules.test.ts",
+        "count": 47
+      },
+      {
+        "file": "app/lib/client-cancellation.test.ts",
+        "count": 9
+      },
+      {
+        "file": "app/lib/payment-requests.test.ts",
+        "count": 24
+      },
+      {
+        "file": "app/lib/server/appointment-email-processor.test.ts",
+        "count": 35
+      },
+      {
+        "file": "app/lib/service-search.test.ts",
+        "count": 13
+      },
+      {
+        "file": "app/lib/services/booking-mutations.test.ts",
+        "count": 43
+      },
+      {
+        "file": "app/lib/services/payment-concurrency.test.ts",
+        "count": 30
+      },
+      {
+        "file": "app/lib/services/payment-mutations.test.ts",
+        "count": 55
+      },
+      {
+        "file": "app/lib/services/portal-auth.test.ts",
+        "count": 40
+      },
+      {
+        "file": "app/lib/validations/service-duration.test.ts",
+        "count": 20
+      },
+      {
+        "file": "tests/browser/client-booking-navigation.spec.ts",
+        "count": 15
+      },
+      {
+        "file": "tests/browser/legal-service-search.spec.ts",
+        "count": 15
+      }
+    ],
+    "FriBolos": [
+      {
+        "file": "tests/admin-catalog.test.tsx",
+        "count": 9
+      },
+      {
+        "file": "tests/client-catalog.test.tsx",
+        "count": 23
+      },
+      {
+        "file": "tests/client-portal-options.test.tsx",
+        "count": 4
+      },
+      {
+        "file": "tests/components.test.tsx",
+        "count": 31
+      },
+      {
+        "file": "tests/cookie-banner.test.tsx",
+        "count": 4
+      },
+      {
+        "file": "tests/formatters.test.ts",
+        "count": 78
+      },
+      {
+        "file": "tests/mini-cart.test.tsx",
+        "count": 18
+      },
+      {
+        "file": "tests/notification-panel.test.tsx",
+        "count": 16
+      },
+      {
+        "file": "tests/order-timeline.test.tsx",
+        "count": 12
+      },
+      {
+        "file": "tests/payment.test.tsx",
+        "count": 38
+      },
+      {
+        "file": "tests/product-options.test.ts",
+        "count": 2
+      },
+      {
+        "file": "tests/rendered-html.test.mjs",
+        "count": 1
+      },
+      {
+        "file": "tests/reset-password.test.tsx",
+        "count": 15
+      },
+      {
+        "file": "tests/supabase.test.tsx",
+        "count": 12
+      },
+      {
+        "file": "tests/use-admin-order-form.test.tsx",
+        "count": 21
+      },
+      {
+        "file": "tests/use-admin-orders.test.tsx",
+        "count": 30
+      },
+      {
+        "file": "tests/use-auth.test.tsx",
+        "count": 15
+      },
+      {
+        "file": "tests/use-notifications.test.tsx",
+        "count": 22
+      },
+      {
+        "file": "tests/use-order-clients.test.tsx",
+        "count": 9
+      },
+      {
+        "file": "tests/use-products.test.tsx",
+        "count": 14
+      },
+      {
+        "file": "tests/use-quotes.test.tsx",
+        "count": 18
+      },
+      {
+        "file": "tests/use-store-settings.test.tsx",
+        "count": 17
+      },
+      {
+        "file": "tests/validator.test.ts",
+        "count": 26
+      }
+    ],
+    "NB-Arquitetura": [
+      {
+        "file": "tests/e2e/public-navigation.spec.ts",
+        "count": 10
+      },
+      {
+        "file": "tests/project-utils.test.ts",
+        "count": 10
+      }
+    ],
+    "whatsapp-dashboard": [
+      {
+        "file": "tests/backup.test.mjs",
+        "count": 1
+      },
+      {
+        "file": "tests/bot.test.mjs",
+        "count": 14
+      },
+      {
+        "file": "tests/dashboard.test.mjs",
+        "count": 12
+      },
+      {
+        "file": "tests/ui/dashboard.spec.mjs",
+        "count": 15
+      }
+    ]
+  },
+  "links": [
+    {
+      "url": "https://spaexpresscambucas.com.br/",
+      "status": 200,
+      "final": "https://www.spaexpresscambucas.com.br/"
+    },
+    {
+      "url": "https://spa-express-cambucas.vercel.app/",
+      "status": 200,
+      "final": "https://spa-express-cambucas.vercel.app/"
+    },
+    {
+      "url": "https://fri-bolos.vercel.app/",
+      "status": 200,
+      "final": "https://fri-bolos.vercel.app/"
+    },
+    {
+      "url": "https://nb-arquitetura.vercel.app/",
+      "status": 200,
+      "final": "https://nb-arquitetura.vercel.app/"
+    },
+    {
+      "url": "https://projeto-transformacao-bjj-rust.vercel.app/",
+      "status": 200,
+      "final": "https://projeto-transformacao-bjj-rust.vercel.app/"
+    },
+    {
+      "url": "https://portfolio-pixel-theta.vercel.app/",
+      "status": 200,
+      "final": "https://portfolio-pixel-theta.vercel.app/"
+    },
+    {
+      "url": "https://lp-namoro.vercel.app/",
+      "status": 200,
+      "final": "https://lp-namoro.vercel.app/"
+    },
+    {
+      "url": "https://www.linkedin.com/in/lu%C3%ADs-felipe-braido-857a28352/details/certifications/",
+      "status": 999,
+      "final": "https://www.linkedin.com/in/lu%C3%ADs-felipe-braido-857a28352"
+    }
+  ],
+  "supplemental_projects": [
+    {
+      "repository": "BraidoLuis/teste-webhook",
+      "verified_on": "2026-10-14",
+      "access": "authenticated-git",
+      "branch": "main",
+      "commit": "9becec04be6de661fa381d2e432c182f1fb5fd06",
+      "public_checks": [
+        {
+          "url": "https://github.com/BraidoLuis/teste-webhook",
+          "status": 404,
+          "authenticated": false
+        },
+        {
+          "url": "https://api.github.com/repos/BraidoLuis/teste-webhook",
+          "status": 404,
+          "authenticated": false
+        }
+      ],
+      "repository_link_published": false,
+      "live_url_confirmed": false,
+      "source_files_reviewed": [
+        "index.js",
+        "package.json",
+        ".gitignore"
+      ],
+      "test_suite_found": false,
+      "content_scope": "Public description only; no private source, credentials, client data or internal endpoints copied."
+    }
+  ],
+  "certifications_update": {
+    "verified_on": "2026-10-14",
+    "source": "print fornecido do LinkedIn; dados transcritos e confirmados pelo usuário na conversa",
+    "date_precision": "month",
+    "records": [
+      {
+        "id": "cisco-networking-basics",
+        "title": "Networking Basics",
+        "issuer": "Cisco",
+        "issued_on": "2026-10",
+        "competencies": [
+          "Redes de computadores",
+          "IPv4"
+        ],
+        "expires_on": null,
+        "credential_id": null,
+        "credential_url": null
+      },
+      {
+        "id": "cisco-introducao-ciberseguranca",
+        "title": "Introduction to Cybersecurity",
+        "issuer": "Cisco",
+        "issued_on": "2026-09",
+        "competencies": [
+          "Cibersegurança"
+        ],
+        "expires_on": null,
+        "credential_id": null,
+        "credential_url": null
+      }
+    ],
+    "pending_fields": [
+      "validade",
+      "identificador da credencial",
+      "URL de verificação"
+    ],
+    "unconfirmed_competencies_omitted": 3,
+    "validation": {
+      "lint": "passed",
+      "typecheck": "passed",
+      "build": "passed",
+      "project_catalog_check": "passed",
+      "preserved_projects": 24,
+      "browser_viewports": [
+        {
+          "width": 1280,
+          "height": 900
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 360,
+          "height": 844
+        }
+      ],
+      "visual_review": "passed",
+      "runtime_errors": [],
+      "evidence_directory": "work/certifications-content-qa/"
+    }
+  },
+  "skills_experiences_update": {
+    "verified_on": "2026-10-14",
+    "sources": [
+      "local catalog of 24 projects",
+      "repository code snapshots at revisions recorded in this audit",
+      "Cisco certifications confirmed by user-provided LinkedIn screenshot data",
+      "curriculum details confirmed by the user in conversation"
+    ],
+    "skills_categories": 12,
+    "experience_records": 6,
+    "project_reference_format": "catalog project IDs",
+    "vambora_period": "Setembro de 2025 — atual",
+    "vambora_period_confirmed_by_user": true,
+    "freelance_started_on": null,
+    "freelance_project_associations_confirmed": [
+      "fribolos",
+      "spa-express"
+    ],
+    "serra_computing_period": "Janeiro de 2025 — 2026",
+    "serra_computing_end_month": null,
+    "confirmed_professional_project_associations": {
+      "serra-junior": [
+        "transformacao"
+      ],
+      "freelance": [
+        "fribolos",
+        "spa-express"
+      ]
+    },
+    "study_technologies": [
+      "Docker",
+      "Linux",
+      "Computação em nuvem"
+    ],
+    "education_started_on": "2021-10",
+    "education_status": "in-progress",
+    "education_expected_completion": null,
+    "validation": {
+      "lint": "passed",
+      "typecheck": "passed",
+      "build": "passed",
+      "project_catalog_check": "passed",
+      "house_checks": "passed (3 scripts)",
+      "skill_project_details_visited": 24,
+      "browser_viewports": [
+        {
+          "width": 1280,
+          "height": 900
+        },
+        {
+          "width": 390,
+          "height": 844
+        },
+        {
+          "width": 360,
+          "height": 844
+        }
+      ],
+      "keyboard_navigation": "passed",
+      "reading_position_and_focus_restoration": "passed",
+      "freelance_links_ui": "passed",
+      "fullscreen": "passed",
+      "progress_persistence": "passed",
+      "certifications_preserved": true,
+      "project_and_game_file_hashes_preserved": true,
+      "visual_review": "passed",
+      "runtime_errors": [],
+      "evidence_directory": "work/skills-experiences-qa/"
+    }
+  }
+}
